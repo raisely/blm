@@ -1,0 +1,35 @@
+{
+  "parser": "babel-eslint",
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended"
+  ],
+  "env": {
+    "browser": true,
+    "es6": true,
+    "node": true,
+    "mocha": true
+  },
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "rules": {
+    "no-mixed-spaces-and-tabs": "off",
+    "require-yield": "off",
+    "no-unmodified-loop-condition": "error",
+    "no-void": "error",
+    "one-var": ["error", "never"],
+    "no-extra-boolean-cast": "off",
+    "no-shadow": ["warn"],
+    "react-hooks/rules-of-hooks": "error", // Checks rules of Hooks
+    "react-hooks/exhaustive-deps": "warn", // Checks effect dependencies
+    "react/prop-types": "off",
+    "react/jsx-no-undef": "off",
+  },
+  "plugins": [
+    "react",
+    "react-hooks"
+  ]
+}
