@@ -20,9 +20,10 @@ const spreadsheets = [{
 	},
 }];
 
-// Used as a lock to ensure only one thread is getching the spreadsheet
+// Used as a lock to ensure only one thread is fetching the spreadsheet
 // this ensures only one update is sent per thread instance, and means
-// requests coming in during the inital request can respond faster
+// requests coming in during the inital request don't have to wait for
+// a full fetch cycle
 let getRowsPromise;
 
 // Updating logos will be slow
@@ -32,7 +33,7 @@ let getRowsPromise;
 let updateLogoPromises;
 
 /**
- * Example Cloud Function that catches webhooks from Raisely
+ * Cloud Function entry point
  *
  * @param {!Object} req Cloud Function request context.
  * @param {!Object} res Cloud Function response context.
