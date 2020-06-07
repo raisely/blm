@@ -1,14 +1,11 @@
 const _ = require('lodash');
-const dayjs = require('dayjs');
-const customParseFormat = require('dayjs/plugin/customParseFormat')
+const pMap = require('p-map');
+const { LogoScrape } = require("logo-scrape")
 const { GoogleSpreadsheet } = require('google-spreadsheet');
-const cache = require('nano-cache');
 
-dayjs.extend(customParseFormat);
-
-// Shared secret. Will prevent basic scrapers (won't stop people
-// from extracting the shared key from the Javascript that calls it)
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+// Google spreadsheet with additional info and overrides from
+// the community sourced sheets
+const META_SHEET = process.env.META_SHEET;
 
 // Only allowed CORS from our domain
 const allowedOrigins = ['.raisely.com'];
@@ -17,11 +14,22 @@ const spreadsheets = [{
 	country: 'AU',
 	documentKey: '1kpse8wqYdjmPrtJPLWnT4RPKVK_-bmQfVP_xDg0d3g4',
 	keyMap: {
-		title: 'Organisation', 
-		description: 'Info', 
+		title: 'Organisation',
+		description: 'Info',
 		donateUrl: 'Link',
 	},
 }];
+
+// Used as a lock to ensure only one thread is getching the spreadsheet
+// this ensures only one update is sent per thread instance, and means
+// requests coming in during the inital request can respond faster
+let getRowsPromise;
+
+// Updating logos will be slow
+// this promise get's fired if at least one logo needs updating
+// but we won't wait for it as it'll keep the client waiting too long
+// instead we'll use the presence of this promise to set no-cache header
+let updateLogoPromises;
 
 /**
  * Example Cloud Function that catches webhooks from Raisely
@@ -37,7 +45,10 @@ exports.integration = async function integration(req, res) {
 		'Access-Control-Allow-Headers, Authorization, Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers'
 	);
 	// only allow CORS from specific hosts
-	const allowedOrigin = allowedOrigins.find(origin => req.headers.origin.endsWith(origin)) ? req.headers.origin : allowedOrigins[0];
+	let allowedOrigin = allowedOrigins[0];
+	if (req.headers.origin && allowedOrigins.find(origin => req.headers.origin.endsWith(origin))) {
+		allowedOrigin = req.headers.origin;
+	}
 	res.set('Access-Control-Allow-Origin', allowedOrigin);
 	res.set('Access-Control-Allow-Credentials', true);
 	res.set('Access-Control-Max-Age', '86400');
@@ -54,37 +65,52 @@ exports.integration = async function integration(req, res) {
 };
 
 async function doGet(req, res) {
-	const results = {};
+	// No need to fetch multiple times if concurrent requests are waiting
+	if (!getRowsPromise) getRowsPromise = loadAllCountries();
 
-	spreadsheets.map(sheetDescription => {
-		const rows = await loadSheetRows(sheetDescription, sheetDescription);
-		results[sheetDescription.country] = await Promise.all(rows.map(async row => {
-			const mappedRow = {};
-			_.forEach(sheetDescription.keyMap, (oldKey, newKey) => {
-				mappedRow[newKey] = row[oldKey];
-			});
-			// if (!mappedRow.logo) mappedRow.logo = await getLogo(donateUrl);
-		}));
-	});
+	const results = await getRowsPromise;
+	getRowsPromise = null;
 
 	const response = {
 		data: results,
 	};
 
+	if (updateLogoPromises) {
+		// FIXME add caching header
+	}
+
 	res.status(200).send(response);
 	return true;
 }
 
+async function loadAllCountries() {
+	const results = {};
+	try {
+		await Promise.all(spreadsheets.map(async sheetDescription => {
+			console.log(`Loading from source sheet for country ${sheetDescription.country}`);
+			const rows = await loadSheetRows(sheetDescription);
+
+			// Merge with any meta info we've noted and add logos
+			console.log(`Merging in meta info from for country ${sheetDescription.country}`);
+			const mergedRows = await mergeMetaRows(sheetDescription, rows);
+			results[sheetDescription.country] = mergedRows;
+		}));
+	} finally {
+		// If a logo update was started, create a promise to clean up when it's done
+		if (updateLogoPromises) finaliseLogoPromises();
+	}
+	return results;
+}
+
 async function loadSheetRows(sheetDescription) {
-	const { sheetKey, sheetTitle } = sheetDescription;
-	const sheet = await getSheet(sheetKey, sheetTitle);
+	const { documentKey, sheetTitle } = sheetDescription;
+	const sheet = await getSheet(documentKey, sheetTitle);
 
 	await sheet.loadCells();
 
 	let rowIndex = 0;
 	const headerMap = {};
 	_.forEach(sheetDescription.keyMap, (theirKey, ourKey) => headerMap[ourKey] = { key: theirKey });
-	let foundHeader = false;
 
 	// Find the header row
 	do {
@@ -93,7 +119,7 @@ async function loadSheetRows(sheetDescription) {
 		}
 		const row = getRowFromCells(sheet, rowIndex, sheet.columnCount);
 		Object.values(headerMap).forEach(header => {
-			const headerIndex = row.findIndex(header.key);
+			const headerIndex = row.findIndex(h => h === header.key);
 			if (headerIndex !== -1) header.index = headerIndex;
 		});
 		rowIndex += 1;
@@ -101,9 +127,8 @@ async function loadSheetRows(sheetDescription) {
 
 	const rows = [];
 	do {
-		const row = getRowFromCells(sheet, rowIndex, sheet.columnCount);
 		const rowAsObject = {};
-		_.forEach(headerMap, ({ index }, key) => rowAsObject[key] = sheet.getCell(rowIndex, index)).value;
+		_.forEach(headerMap, ({ index }, key) => rowAsObject[key] = sheet.getCell(rowIndex, index).value);
 
 		// No point adding rows not containing a url
 		if (rowAsObject.donateUrl) rows.push(rowAsObject);
@@ -113,17 +138,17 @@ async function loadSheetRows(sheetDescription) {
 	return rows;
 }
 
-function getRowFromCells(sheet, row, width) {
+function getRowFromCells(sheet, rowIndex, width) {
 	const row = [];
-	for (let i=0; i < sheet.width; i++) {
-		row[i] = sheet.getCell(row, i).value;
+	for (let i=0; i < width; i++) {
+		row[i] = sheet.getCell(rowIndex, i).value;
 	}
 	return row;
 }
 
 async function getSheet(sheetKey, sheetTitle) {
 		// spreadsheet key is the long id in the sheets URL
-		const doc = new GoogleSpreadsheet(process.env.SHEET_KEY);
+		const doc = new GoogleSpreadsheet(sheetKey);
 
 		let credentials;
 		if (process.env.GOOGLE_CREDENTIALS_JSON) {
@@ -140,7 +165,79 @@ async function getSheet(sheetKey, sheetTitle) {
 
 		// loads document properties and worksheets
 		await doc.loadInfo();
-		const sheet = sheetName ? doc.sheetsByIndex.find(sheet => sheet.title === sheetTitle) : doc.sheetsByIndex[0];
+		const sheet = sheetTitle ? doc.sheetsByIndex.find(sheet => sheet.title === sheetTitle) : doc.sheetsByIndex[0];
 
 		return sheet;
+}
+
+async function mergeMetaRows(sheetDescription, rows) {
+	const metaSheet = await getSheet(META_SHEET, sheetDescription.country);
+
+	const mergedRows = [];
+	const newMetaRows = [];
+
+	const metaRows = await metaSheet.getRows();
+	rows.forEach(row => {
+		const metaRow = metaRows.find(mr => mr.donateUrl === row.donateUrl);
+		let newRow;
+		if (metaRow) {
+			// Pick just the values, or we'll get circular referenes trying to
+			// serialise
+			const rawMeta = _.pickBy(metaRow, (value, key) => !(key.startsWith('_') || _.isObject(value)));
+			newRow = { ...row, ...rawMeta };
+		} else {
+			newRow = row;
+			newMetaRows.push(row);
+		}
+		if (!newRow.hide) mergedRows.push(newRow);
+	});
+
+	const newRows = await metaSheet.addRows(newMetaRows);
+
+	const allMetaRows = metaRows.concat(newRows);
+	const rowsWithoutLogos = allMetaRows.filter(row => !row.logo && !row.hide);
+	if (rowsWithoutLogos.length) {
+		if (!updateLogoPromises) updateLogoPromises = [];
+		updateLogoPromises.push(updateLogos(metaSheet, rowsWithoutLogos));
+	}
+
+	// Replace any logo's that are set to (none) with null
+	metaRows.forEach(row => {
+		if (row.logo) {
+			if (!(row.logo.startsWith('http://') || row.logo.startsWith('https://'))) {
+				row.logo = null;
+			}
+		}
+	});
+
+	return mergedRows;
+}
+
+async function getLogo(row) {
+	try {
+		const logo = await LogoScrape.getLogo(row.donateUrl)
+		row.logo = _.get(logo, 'url', '(none)');
+		await row.save();
+	} catch (e) {
+		console.error(e);
+	}
+}
+
+async function updateLogos(sheetDescription, rowsWithoutLogos) {
+	console.log(`Updating logos for ${rowsWithoutLogos.length} rows`);
+	// Fetch logo's 5 at a time
+	return pMap(rowsWithoutLogos, getLogo, { concurrency: 5 });
+}
+
+/**
+ * Handler to ensure
+ */
+async function finaliseLogoPromises() {
+	try {
+		await Promise.all(updateLogoPromises)
+	} catch (e) {
+		console.error(e);
+	} finally {
+		updateLogoPromises = null;
+	}
 }
