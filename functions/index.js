@@ -84,6 +84,10 @@ async function doGet(req, res) {
 
 	const response = {
 		data: results,
+		sources: spreadsheets.map(sheet => ({
+			country: sheet.country,
+			url: `https://docs.google.com/spreadsheets/u/0/d/${sheet.documentKey}/htmlview`,
+		})),
 	};
 
 	if (updateLogoPromises) {
