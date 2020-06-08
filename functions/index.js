@@ -161,7 +161,14 @@ async function loadSourceRows(sheetDescription) {
 		_.forEach(headerMap, ({ index }, key) => rowAsObject[key] = sheet.getCell(rowIndex, index).value);
 
 		// No point adding rows not containing a url
-		if (rowAsObject.donateUrl) rows.push(rowAsObject);
+		if (rowAsObject.donateUrl) {
+			// Sheets sometime capitalises the first letter (eg Http://)
+			// which causes problems for the scraper
+			const replacer = /^http[s]?:\/\//i;
+			rowAsObject.donateUrl = rowAsObject.donateUrl.replace(replacer, m => m.toLowerCase());
+			const validUrl = rowAsObject.donateUrl.startsWith('http://') || rowAsObject.donateUrl.startsWith('https://')
+			if (validUrl) rows.push(rowAsObject);
+		}
 		rowIndex += 1;
 	} while (rowIndex < sheet.rowCount);
 
