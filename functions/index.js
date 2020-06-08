@@ -19,6 +19,15 @@ const spreadsheets = [{
 		description: 'Info',
 		donateUrl: 'Link',
 	},
+}, {
+	country: 'US',
+	documentKey: '1p7QxOvtvRfHUoMWib8coGHSS8szENXzSjIZKpvp-gtA',
+	sheetTitle: 'ACCESSIBLE VERSION',
+	keyMap: {
+		title: 'Org/Individual',
+		donateUrl: 'Link',
+		state: 'Location (State)'
+	},
 }];
 
 // Used as a lock to ensure only one thread is fetching the spreadsheet
