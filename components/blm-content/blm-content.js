@@ -3,6 +3,8 @@ RaiselyComponents => {
 		"https://us-central1-raisely-custom.cloudfunctions.net/blm-lookup";
 
 	const { Button } = RaiselyComponents.Atoms;
+	const { Link } = RaiselyComponents;
+	const { Modal } = RaiselyComponents.Molecules;
 
 	const some = obj => {
 		return obj[Math.floor(Math.random() * obj.length)];
@@ -45,7 +47,7 @@ RaiselyComponents => {
 		);
 	};
 
-	const HighlightOrganisation = ({ org, setHighlight, data }) => {
+	const HighlightOrganisation = ({ org, setHighlight, data, sources, countryList }) => {
 		if (!org || !org.donateUrl) return null;
 
 		return (
@@ -88,7 +90,64 @@ RaiselyComponents => {
 					<span className="highlight-actions__divider">-</span>
 					<a href="#list">Or choose from the list 👇</a>
 				</div>
+				<div className="about-section">
+					<p>
+						The information has been compiled automatically from community sources. It has not been vetted.
+						You should verify any organisation or person yourself before making a donation.
+						<Modal
+							button
+							buttonTitle="More info"
+							modalContent={() => <About
+								sources={sources}
+								countryList={countryList}
+							/>}
+						/>
+					</p>
+				</div>
 			</React.Fragment>
+		);
+	};
+
+	const About = ({ sources, countryList }) => {
+		const mergedSources = {};
+		sources.forEach(source => {
+			if (!mergedSources[source.country]) mergedSources[source.country] = [];
+			mergedSources[source.country].push(source.url);
+		});
+		console.log(mergedSources, countryList)
+		return (
+			<div className="about__wrapper">
+				<p>
+					This is a compilation of community resources to make them easier for people to access and support #BLM
+					in their country.
+				</p>
+				<p>
+					The information in this website is compiled automatically from the community created spreadsheets listed below.
+				</p>
+				<p>
+					Feel free to contact us to share resources that should be added, or corrections that need to be made.
+				</p>
+				<div className="source-list">
+					<h3>Sources</h3>
+					<ul>
+						{Object.keys(mergedSources).map(countryCode => (
+							<li>
+								<strong>
+									{countryList[countryCode.toUpperCase()].name}
+								</strong>
+								{' - '}
+								{mergedSources[countryCode].map((source, i) => (
+									<React.Fragment>
+										<Link href={source}>Source {i + 1}</Link>
+										{((i + 1) < mergedSources[countryCode].length) ? ',' : ''}
+									</React.Fragment>
+								))}
+
+							</li>
+						))}
+					</ul>
+				</div>
+			</div>
 		);
 	};
 
@@ -133,6 +192,7 @@ RaiselyComponents => {
 		const [countryData, setCountryData] = React.useState();
 		const [highlight, setHighlight] = React.useState();
 		const [data, setData] = React.useState();
+		const [sources, setSources] = React.useState();
 
 		const dummyData = {
 			AU: [
@@ -208,8 +268,9 @@ RaiselyComponents => {
 					console.error(await response.text());
 				}
 				const body = await response.json();
-				const { data } = body;
+				const { data, sources } = body;
 				setData(data);
+				setSources(sources);
 			} catch (e) {
 				console.error(e);
 			}
@@ -282,6 +343,8 @@ RaiselyComponents => {
 						org={highlight}
 						setHighlight={setHighlight}
 						data={countryData}
+						sources={sources}
+						countryList={countryList}
 					/>
 					<ListOrgansinations data={countryData} />
 				</div>
