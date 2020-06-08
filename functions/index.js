@@ -86,15 +86,23 @@ async function doGet(req, res) {
 
 async function loadAllCountries() {
 	const results = {};
+	const metaDocumentPromise = loadGoogleSpreadsheet(META_SHEET);
 	try {
 		await Promise.all(spreadsheets.map(async sheetDescription => {
 			console.log(`Loading from source sheet for country ${sheetDescription.country}`);
-			const rows = await loadSheetRows(sheetDescription);
+
+			const { country } = sheetDescription;
+			const [{ metaRows, metaSheet }, rows] = await Promise.all([
+				loadCountryMetaRows(metaDocumentPromise, sheetDescription),
+				loadSourceRows(sheetDescription),
+			]);
+
+			console.log(`Processing source sheet for country ${sheetDescription.country}`);
 
 			// Merge with any meta info we've noted and add logos
-			console.log(`Merging in meta info from for country ${sheetDescription.country}`);
-			const mergedRows = await mergeMetaRows(sheetDescription, rows);
-			results[sheetDescription.country] = mergedRows;
+			console.log(`Merging in meta info for country ${sheetDescription.country}`);
+			const mergedRows = await mergeMetaRows(metaSheet, metaRows, sheetDescription, rows);
+			results[country] = mergedRows;
 		}));
 	} finally {
 		// If a logo update was started, create a promise to clean up when it's done
@@ -103,9 +111,16 @@ async function loadAllCountries() {
 	return results;
 }
 
-async function loadSheetRows(sheetDescription) {
+async function loadCountryMetaRows(metaDocumentPromise, sheetDescription) {
+	const metaDocument = await metaDocumentPromise;
+	const metaSheet = await loadSheet({ spreadsheet: metaDocument, sheetTitle: sheetDescription.country });
+	const metaRows = await metaSheet.getRows();
+	return { metaRows, metaSheet };
+}
+
+async function loadSourceRows(sheetDescription) {
 	const { documentKey, sheetTitle } = sheetDescription;
-	const sheet = await getSheet(documentKey, sheetTitle);
+	const sheet = await loadSheet({ documentKey, sheetTitle })
 
 	await sheet.loadCells();
 
@@ -147,37 +162,41 @@ function getRowFromCells(sheet, rowIndex, width) {
 	return row;
 }
 
-async function getSheet(sheetKey, sheetTitle) {
-		// spreadsheet key is the long id in the sheets URL
-		const doc = new GoogleSpreadsheet(sheetKey);
+async function loadGoogleSpreadsheet(sheetKey) {
+	// spreadsheet key is the long id in the sheets URL
+	const doc = new GoogleSpreadsheet(sheetKey);
 
-		let credentials;
-		if (process.env.GOOGLE_CREDENTIALS_JSON) {
-			const jsonCreds = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
-			credentials = _.pick(jsonCreds, ['client_email', 'private_key']);
-		} else {
-			credentials = {
-				// use service account creds
-				client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-				private_key: process.env.GOOGLE_PRIVATE_KEY,
-			};
-		}
-		await doc.useServiceAccountAuth(credentials);
+	let credentials;
+	if (process.env.GOOGLE_CREDENTIALS_JSON) {
+		const jsonCreds = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+		credentials = _.pick(jsonCreds, ['client_email', 'private_key']);
+	} else {
+		credentials = {
+			// use service account creds
+			client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+			private_key: process.env.GOOGLE_PRIVATE_KEY,
+		};
+	}
+	await doc.useServiceAccountAuth(credentials);
 
-		// loads document properties and worksheets
-		await doc.loadInfo();
-		const sheet = sheetTitle ? doc.sheetsByIndex.find(sheet => sheet.title === sheetTitle) : doc.sheetsByIndex[0];
+	// loads document properties and worksheets
+	await doc.loadInfo();
 
-		return sheet;
+	return doc;
 }
 
-async function mergeMetaRows(sheetDescription, rows) {
-	const metaSheet = await getSheet(META_SHEET, sheetDescription.country);
+async function loadSheet({ documentKey, spreadsheet, sheetTitle }) {
+	const doc = spreadsheet || await loadGoogleSpreadsheet(documentKey);
 
+	const sheet = sheetTitle ? doc.sheetsByIndex.find(s => s.title === sheetTitle) : doc.sheetsByIndex[0];
+
+	return sheet;
+}
+
+async function mergeMetaRows(metaSheet, metaRows, sheetDescription, rows) {
 	const mergedRows = [];
 	const newMetaRows = [];
 
-	const metaRows = await metaSheet.getRows();
 	rows.forEach(row => {
 		const metaRow = metaRows.find(mr => mr.donateUrl === row.donateUrl);
 		let newRow;
