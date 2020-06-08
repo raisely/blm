@@ -2,6 +2,7 @@ const _ = require('lodash');
 const pMap = require('p-map');
 const { LogoScrape } = require("logo-scrape")
 const { GoogleSpreadsheet } = require('google-spreadsheet');
+const axios = require('axios');
 
 // Google spreadsheet with additional info and overrides from
 // the community sourced sheets
@@ -235,12 +236,41 @@ async function mergeMetaRows(metaSheet, metaRows, sheetDescription, rows) {
 
 async function getLogo(row) {
 	try {
-		const logo = await LogoScrape.getLogo(row.donateUrl)
-		row.logo = _.get(logo, 'url', '(none)');
+		let logo;
+		// Allow users to request fetching the twitter logo by writting
+		// twitter in the meta document
+		if (_.get(row, 'logo', '').toLowerCase() !== 'twitter') {
+			const scrapedLogo = await LogoScrape.getLogo(row.donateUrl)
+
+			logo = _.get(scrapedLogo, 'url', null);
+			if (logo.endsWith('.ico')) logo = null;
+		}
+		if (!logo) {
+			const twitterLogo = await scrapeTwitterLogo(row);
+			if (twitterLogo) logo = twitterLogo;
+		}
+		row.logo = logo || '(none)';
 		await row.save();
 	} catch (e) {
 		console.error(e);
 	}
+}
+
+async function scrapeTwitterLogo(row) {
+	const response = await axios(row.donateUrl);
+	const body = response.data;
+
+	const matcher = /twitter\.com\/([A-Za-z0-9]+)[/?#"']/g;
+	const reservedWords = ['intent', 'about', 'me', 'signup', 'gofundme'];
+
+	let match;
+	do {
+		match = matcher.exec(body);
+		// Keep searching until we run out of matches, or
+	} while (match && reservedWords.includes(match[1]));
+
+	if (match) return `https://twitter-avatar.now.sh/${match[1]}`;
+	return null;
 }
 
 async function updateLogos(sheetDescription, rowsWithoutLogos) {
