@@ -236,15 +236,15 @@ RaiselyComponents => {
 			if (!editor) {
 				loadCharities();
 			}
-		});
+		}, []);
 
 		React.useEffect(() => {
 			if (editor) {
 				setCountryData(dummyData[detectedCountry] || dummyData.rest);
 			} else {
-				setCountryData(data[detectedCountry] || data.AU);
+				if (data) setCountryData(data[detectedCountry] || data.AU);
 			}
-		}, [detectedCountry]);
+		}, [detectedCountry, data]);
 
 		React.useEffect(() => {
 			// set highlighted cause using current country else randomly select from data
