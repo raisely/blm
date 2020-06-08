@@ -71,6 +71,11 @@ RaiselyComponents => {
 					</Button>
 				</a>
 				<div className="highlight-actions">
+					<Link className="link" href={`/link?name=${org.title}&url=${org.donateUrl}`}>
+						<i className="material-icons">code</i>
+						Link to this
+					</Link>
+					<span className="highlight-actions__divider">-</span>
 					<button
 						className="shuffle-button"
 						onClick={() =>
