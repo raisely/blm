@@ -1,0 +1,54 @@
+{
+    "fields": {
+        "version": {
+            "type": "number",
+            "label": "Current Version of Component",
+            "value": 140
+        },
+        "countries": {
+            "id": "countries",
+            "type": "repeater",
+            "label": "Countries",
+            "options": [
+                {
+                    "id": "code",
+                    "type": "text",
+                    "label": "Country Code"
+                },
+                {
+                    "id": "flag",
+                    "type": "text",
+                    "label": "Flag"
+                },
+                {
+                    "id": "title",
+                    "type": "text",
+                    "label": "Title"
+                },
+                {
+                    "id": "sheet",
+                    "type": "text",
+                    "label": "Spreadsheet"
+                },
+                {
+                    "id": "highlight",
+                    "type": "text",
+                    "label": "Highlighted Cause",
+                    "placeholder": "Name of highlighted cause"
+                }
+            ],
+            "singular": "Country"
+        },
+        "defaultSheet": {
+            "id": "defaultSheet",
+            "type": "text",
+            "label": "Default Sheet"
+        },
+        "defaultTitle": {
+            "id": "defaultTitle",
+            "type": "text",
+            "label": "Default Title"
+        }
+    },
+    "uuid": "41331720-a7e8-11ea-b665-e34491279d15"
+}
