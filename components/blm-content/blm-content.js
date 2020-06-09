@@ -175,7 +175,9 @@ RaiselyComponents => {
 					The information in this website is compiled automatically from the community created spreadsheets listed below.
 				</p>
 				<p>
-					Feel free to contact us to share resources that should be added, or corrections that need to be made.
+					Feel free to{' '}
+					<Link href="https://github.com/raisely/blm">contact us</Link>{' '}
+					to share resources that should be added, or corrections that need to be made.
 				</p>
 				<div className="source-list">
 					<h3>Sources</h3>
