@@ -1,8 +1,12 @@
 # YouHaveOur.Support ✊🏿✊🏾✊🏽
 
-Did you come here to report an issue with the site, an update that's needed or a resource that should be added/fixed?
+**Did you come here to report an issue with the site, an update that's needed or a resource that should be added/fixed?**
 
 👉🏾 [Click here](https://github.com/raisely/blm/issues/new) 👈🏾
+
+---
+
+### About
 
 This app compiles #BLM resources focusing on organisations you can donate to to support #BLM in your country.
 
