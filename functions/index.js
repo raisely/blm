@@ -28,6 +28,23 @@ const spreadsheets = [{
 		donateUrl: 'Link',
 		state: 'Location (State)'
 	},
+}, {
+	country: 'UK',
+	documentKey: '1mZu6UAxnanWUMHGz3m6zgsFSEQE3IXG8AfuGxV_PuTM',
+	keyMap: {
+		title: 'ORGANISATIONS',
+		donateUrl: 'LINKS',
+		description: 'WHAT THEY DO'
+	}
+}, {
+	country: 'US',
+	documentKey: '1SRl1HOoBC_RSI4X8e_O8W9yI-7E7WJfJgYpa3UAUY-o',
+	keyMap: {
+		title: 'Name',
+		donateUrl: 'Website',
+		state: 'State',
+		city: 'City',
+	}
 }];
 
 // Used as a lock to ensure only one thread is fetching the spreadsheet
@@ -102,7 +119,7 @@ async function loadAllCountries() {
 	const results = {};
 	const metaDocumentPromise = loadGoogleSpreadsheet(META_SHEET);
 	try {
-		await Promise.all(spreadsheets.map(async sheetDescription => {
+		await pMap(spreadsheets, (async sheetDescription => {
 			console.log(`Loading from source sheet for country ${sheetDescription.country}`);
 
 			const { country } = sheetDescription;
@@ -117,7 +134,7 @@ async function loadAllCountries() {
 			console.log(`Merging in meta info for country ${sheetDescription.country}`);
 			const mergedRows = await mergeMetaRows(metaSheet, metaRows, sheetDescription, rows);
 			results[country] = mergedRows;
-		}));
+		}), { concurrency: 2 });
 	} finally {
 		// If a logo update was started, create a promise to clean up when it's done
 		if (updateLogoPromises) finaliseLogoPromises();
