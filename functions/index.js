@@ -280,7 +280,7 @@ async function getLogo(row) {
 			const scrapedLogo = await LogoScrape.getLogo(row.donateUrl)
 
 			logo = _.get(scrapedLogo, 'url', null);
-			if (logo.endsWith('.ico')) logo = null;
+			if (logo && logo.endsWith('.ico')) logo = null;
 		}
 		if (!logo) {
 			const twitterLogo = await scrapeTwitterLogo(row);
