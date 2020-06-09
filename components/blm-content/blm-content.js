@@ -30,7 +30,12 @@ RaiselyComponents => {
 	};
 
 	const OrganisationLogo = ({ org }) => {
-		if (!org.logo) return null;
+		if (
+			!org.logo
+			|| org.logo === '(none)'
+			|| org.logo.includes('.ico')
+			|| org.logo.includes('favicon')
+		) return null;
 
 		return (
 			<div className="organisation-logo">
@@ -65,10 +70,16 @@ RaiselyComponents => {
 							<p>{org.description}</p>
 						</div>
 					</div>
-					<Button theme="cta">
-						<span className="thin">Donate to&nbsp;</span>
-						{org.title}
-					</Button>
+					<div className="highlight-org__footer">
+						<Button
+							theme="cta"
+							onClick={() => setShowEmbed(true)}
+						>
+							<span className="thin">Donate to&nbsp;</span>
+							{org.title}
+						</Button>
+						<p className="small">The struggle will continue after this moment passes. Consider making a regular donation.</p>
+					</div>
 				</a>
 				<div className="highlight-actions">
 					<Link className="link" href={`/link?name=${org.title}&url=${org.donateUrl}`}>
@@ -170,7 +181,7 @@ RaiselyComponents => {
 							<OrganisationLogo org={org} />
 							<div className="organisation__content">
 								<h4>{org.title}</h4>
-								<p>{org.description}</p>
+								{org.description && <p>{org.description}</p>}
 							</div>
 							<div className="organisation__donate">
 								<Button
@@ -322,7 +333,7 @@ RaiselyComponents => {
 								cause.title.toLowerCase() ===
 								current.highlight.toLowerCase()
 						)) ||
-						some(countryData)
+					some(countryData)
 				);
 		}, [countryData]);
 
@@ -344,6 +355,7 @@ RaiselyComponents => {
 					</h1>
 				)}
 				<div className="content__container">
+					{!data && <Spinner size={2} />}
 					<HighlightOrganisation
 						org={highlight}
 						setHighlight={setHighlight}
