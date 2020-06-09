@@ -290,6 +290,10 @@ async function getLogo(row) {
 		await row.save();
 	} catch (e) {
 		console.error(e);
+		row.logo = '(none)';
+		// If the save fails it's most likely a quota error
+		// don't let that bubble up
+		await row.save().catch(console.error);
 	}
 }
 
