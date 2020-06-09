@@ -94,7 +94,12 @@ exports.integration = async function integration(req, res) {
 
 async function doGet(req, res) {
 	// No need to fetch multiple times if concurrent requests are waiting
-	if (!getRowsPromise) getRowsPromise = loadAllCountries();
+	if (!getRowsPromise) {
+		console.log('Initiating new lookup');
+		getRowsPromise = loadAllCountries();
+	} else {
+		console.log('Queuing concurrent request');
+	}
 
 	const results = await getRowsPromise;
 	getRowsPromise = null;
