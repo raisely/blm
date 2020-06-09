@@ -2,8 +2,10 @@ RaiselyComponents => {
 	const LOOKUP_PROXY =
 		"https://us-central1-raisely-custom.cloudfunctions.net/blm-lookup";
 
+	const Embed = RaiselyComponents.import('blm-embed');
+
+	const { Link, Spinner } = RaiselyComponents;
 	const { Button } = RaiselyComponents.Atoms;
-	const { Link } = RaiselyComponents;
 	const { Modal } = RaiselyComponents.Molecules;
 
 	const some = obj => {
@@ -55,6 +57,8 @@ RaiselyComponents => {
 	const HighlightOrganisation = ({ org, setHighlight, data, sources, countryList }) => {
 		if (!org || !org.donateUrl) return null;
 
+		const [showEmbed, setShowEmbed] = React.useState();
+
 		return (
 			<React.Fragment>
 				<a
@@ -82,14 +86,9 @@ RaiselyComponents => {
 					</div>
 				</a>
 				<div className="highlight-actions">
-					<Link className="link" href={`/link?name=${org.title}&url=${org.donateUrl}`}>
-						<i className="material-icons">code</i>
-						Link to this
-					</Link>
-					<span className="highlight-actions__divider">-</span>
 					<button
-						className="shuffle-button"
-						onClick={() =>
+						className="link-button"
+						onClick={() => data &&
 							setHighlight(
 								some(
 									// ensure same org can be chosen twice in a row
@@ -100,25 +99,59 @@ RaiselyComponents => {
 							)
 						}
 					>
-						<i className="material-icons">loop</i>
+						<i className="material-icons loop">loop</i>
 						Show me another
 					</button>
+					<span className="highlight-actions__divider">-</span>
+					{/* <button
+						className="link-button"
+						href={`/link?name=${org.title}&url=${org.donateUrl}`}
+					>
+						<i className="material-icons">code</i>
+						Embed
+					</button> */}
+					<Modal
+						button
+						buttonTitle="Embed"
+						onClose={() => setShowEmbed(false)}
+						modalContent={() => (
+							<Embed
+								url={org.donateUrl}
+								name={org.title}
+							/>
+						)}
+					/>
+					{showEmbed && <Modal
+						button
+						automatic
+						buttonTitle="Embed"
+						onClose={() => setShowEmbed(false)}
+						modalContent={() => (
+							<Embed
+								url={org.donateUrl}
+								name={org.title}
+							/>
+						)}
+					/>}
 					<span className="highlight-actions__divider">-</span>
 					<a href="#list">Or choose from the list 👇</a>
 				</div>
 				<div className="about-section">
-					<p>
+					<i className="material-icons">error_outline</i>
+					<p className="small">
 						The information has been compiled automatically from community sources. It has not been vetted.
 						You should verify any organisation or person yourself before making a donation.
-						<Modal
-							button
-							buttonTitle="More info"
-							modalContent={() => <About
+					</p>
+					<Modal
+						button
+						buttonTitle="More"
+						modalContent={() => (
+							<About
 								sources={sources}
 								countryList={countryList}
-							/>}
-						/>
-					</p>
+							/>
+						)}
+					/>
 				</div>
 			</React.Fragment>
 		);
