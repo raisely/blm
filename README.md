@@ -21,7 +21,7 @@ supported by a [cloud function](functions) to compile the information.
 The cloud function compiles links from a list of community sources and attempts to scrape a logo or twitter avatar
 for the link.
 
-The compiled information is cached into a [master spreadsheet](https://docs.google.com/spreadsheets/d/1BrzORduZ4Zf4y0HlHbkOnZqT826fHCjI_c4k4y0AaMo/edit#gid=854958934) that can be used to correct logos or descriptions
+The compiled information is cached into a [main spreadsheet](https://docs.google.com/spreadsheets/d/1BrzORduZ4Zf4y0HlHbkOnZqT826fHCjI_c4k4y0AaMo/edit#gid=854958934) that can be used to correct logos or descriptions
 or hide an entry if need be.
 
 ### Authors
