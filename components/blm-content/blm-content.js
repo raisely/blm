@@ -7,6 +7,7 @@ RaiselyComponents => {
 	const { Link, Spinner } = RaiselyComponents;
 	const { Button } = RaiselyComponents.Atoms;
 	const { Modal } = RaiselyComponents.Molecules;
+	const { get } = RaiselyComponents.Common;
 
 	const some = obj => {
 		return obj[Math.floor(Math.random() * obj.length)];
@@ -24,7 +25,7 @@ RaiselyComponents => {
 							{country.toUpperCase()}
 						</option>
 					))}
-					<option value="rest">GLOBAL</option>
+					{/* <option value="rest">GLOBAL</option> */}
 				</select>
 				{current.rest ? "🌍" : current.flag}
 			</div>
@@ -182,7 +183,7 @@ RaiselyComponents => {
 						{Object.keys(mergedSources).map(countryCode => (
 							<li>
 								<strong>
-									{countryList[countryCode.toUpperCase()].name}
+									{get(countryList[countryCode.toUpperCase()], 'name', countryCode.toUpperCase())}
 								</strong>
 								{' - '}
 								{mergedSources[countryCode].map((source, i) => (
@@ -242,6 +243,12 @@ RaiselyComponents => {
 		const [highlight, setHighlight] = React.useState();
 		const [data, setData] = React.useState();
 		const [sources, setSources] = React.useState();
+
+		const nearbyCountries = {
+			'AU': ['NZ'],
+			'US': ['CA'],
+			'UK': ['IE', 'IM']
+		};
 
 		const dummyData = {
 			AU: [
@@ -338,7 +345,13 @@ RaiselyComponents => {
 			if (editor) {
 				setDetectedCountry("AU");
 			} else {
-				setDetectedCountry(detected);
+				let nearestCountry = detected;
+				if (!countries.find(c => c.code === detected)) {
+					nearestCountry = Object.keys(nearbyCountries).find(key =>
+						nearbyCountries[key].includes(detected)
+					);
+				}
+				setDetectedCountry(nearestCountry);
 			}
 		}, []);
 
