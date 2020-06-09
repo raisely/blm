@@ -2,7 +2,7 @@
 
 **Did you come here to report an issue with the site, an update that's needed or a resource that should be added/fixed?**
 
-👉🏾 [Click here](https://github.com/raisely/blm/issues/new) 👈🏾
+👉🏾 [Click here to contact us](https://github.com/raisely/blm/issues/new) 👈🏾
 
 ---
 
@@ -23,6 +23,10 @@ for the link.
 
 The compiled information is cached into a [master spreadsheet](https://docs.google.com/spreadsheets/d/1BrzORduZ4Zf4y0HlHbkOnZqT826fHCjI_c4k4y0AaMo/edit#gid=854958934) that can be used to correct logos or descriptions
 or hide an entry if need be.
+
+### Authors
+
+This site has been built by the team at [Raisely](https://github.com/raisely)
 
 ### License
 
