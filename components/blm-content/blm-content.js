@@ -176,7 +176,7 @@ RaiselyComponents => {
 				</p>
 				<p>
 					Feel free to{' '}
-					<Link href="https://github.com/raisely/blm">contact us</Link>{' '}
+					<Link href="https://github.com/raisely/blm#readme">contact us</Link>{' '}
 					to share resources that should be added, or corrections that need to be made.
 				</p>
 				<div className="source-list">
