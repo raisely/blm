@@ -3,6 +3,7 @@ const pMap = require('p-map');
 const { LogoScrape } = require("logo-scrape")
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const axios = require('axios');
+const cache = require('nano-cache');
 
 // Google spreadsheet with additional info and overrides from
 // the community sourced sheets
@@ -94,26 +95,34 @@ exports.integration = async function integration(req, res) {
 
 async function doGet(req, res) {
 	// No need to fetch multiple times if concurrent requests are waiting
-	if (!getRowsPromise) {
-		console.log('Initiating new lookup');
-		getRowsPromise = loadAllCountries();
-	} else {
-		console.log('Queuing concurrent request');
-	}
+	let response = cache.get('response');
 
-	const results = await getRowsPromise;
-	getRowsPromise = null;
+	// Force a fresh lookup if noCache is passed
+	if (req.query.noCache) response = null;
 
-	const response = {
-		data: results,
-		sources: spreadsheets.map(sheet => ({
-			country: sheet.country,
-			url: `https://docs.google.com/spreadsheets/u/0/d/${sheet.documentKey}/htmlview`,
-		})),
-	};
+	if (!response) {
+		if (!getRowsPromise) {
+			console.log('Initiating new lookup');
+			getRowsPromise = loadAllCountries();
+		} else {
+			console.log('Queuing concurrent request');
+		}
 
-	if (updateLogoPromises) {
-		// FIXME add caching header
+		const results = await getRowsPromise;
+		getRowsPromise = null;
+
+		response = {
+			data: results,
+			sources: spreadsheets.map(sheet => ({
+				country: sheet.country,
+				url: `https://docs.google.com/spreadsheets/u/0/d/${sheet.documentKey}/htmlview`,
+			})),
+		};
+
+		cache.set('response', response, {
+			// Cache for 30 minutes
+			ttl: 30 * 60 * 1000,
+		});
 	}
 
 	res.status(200).send(response);

@@ -13,6 +13,7 @@
     "google-spreadsheet": "^3.0.11",
     "lodash": "^4.17.15",
     "logo-scrape": "^1.1.0",
+    "nano-cache": "^1.1.2",
     "p-map": "^4.0.0"
   },
   "devDependencies": {
