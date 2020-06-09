@@ -9,7 +9,7 @@ const axios = require('axios');
 const META_SHEET = process.env.META_SHEET;
 
 // Only allowed CORS from our domain
-const allowedOrigins = ['.raisely.com'];
+const allowedOrigins = ['.raisely.com', 'youhaveour.support'];
 
 const spreadsheets = [{
 	country: 'AU',
