@@ -6,7 +6,7 @@ RaiselyComponents => {
 
 	const { Link, Spinner } = RaiselyComponents;
 	const { Button } = RaiselyComponents.Atoms;
-	const { Modal } = RaiselyComponents.Molecules;
+	const { Modal, RaiselyShare } = RaiselyComponents.Molecules;
 	const { get } = RaiselyComponents.Common;
 
 	const some = obj => {
@@ -28,37 +28,69 @@ RaiselyComponents => {
 					{/* <option value="rest">GLOBAL</option> */}
 				</select>
 				{current.rest ? "🌍" : current.flag}
+				<i className="material-icons">expand_more</i>
 			</div>
 		);
 	};
 
 	const OrganisationLogo = ({ org }) => {
+		let logo = org.logo;
+		let hasIlly = false;
+
 		if (
-			!org.logo
-			|| org.logo === '(none)'
-			|| org.logo.includes('.ico')
-			|| org.logo.includes('favicon')
-		) return null;
+			!logo
+			|| logo === '(none)'
+			|| logo.includes('.ico')
+			|| logo.includes('favicon')
+		) {
+			// pick random illustration
+			logo = some(['https://raisely-images.imgix.net/raisely-blm/uploads/figure-three-png-e57031.png', 'https://raisely-images.imgix.net/raisely-blm/uploads/figure-two-png-3ef7bb.png', 'https://raisely-images.imgix.net/raisely-blm/uploads/figure-four-png-ef30a9.png', 'https://raisely-images.imgix.net/raisely-blm/uploads/figure-one-png-72ca16.png']);
+			hasIlly = true;
+		}
 
 		return (
-			<div className="organisation-logo">
+			<div className={`organisation-logo ${hasIlly ? 'organisation-logo--has-illy' : ''}`}>
 				<span
 					className="organisation-logo__img organisation-logo__img--invert"
-					style={{ backgroundImage: `url(${org.logo})` }}
+					style={{ backgroundImage: `url(${logo})` }}
 				/>
 				<span
 					className="organisation-logo__img organisation-logo__img--color"
-					style={{ backgroundImage: `url(${org.logo})` }}
+					style={{ backgroundImage: `url(${logo})` }}
 					title={`${org.title}'s logo`}
 				/>
 			</div>
 		);
 	};
 
-	const HighlightOrganisation = ({ org, setHighlight, data, sources, countryList }) => {
+	const HighlightOrganisation = ({ org, setHighlight, data, sources, countryList, global }) => {
 		if (!org || !org.donateUrl) return null;
 
 		const [showEmbed, setShowEmbed] = React.useState();
+
+		const ShareModal = ({ automatic }) => (
+			<Modal
+				button
+				automatic={automatic}
+				buttonTitle="Share"
+				onClose={() => setShowEmbed(false)}
+				modalContent={() => (
+					<div className="share-modal">
+						<h2>📣&nbsp;Spread the word</h2>
+						<RaiselyShare
+							theme="filled"
+							size="normal"
+							networks={['facebook', 'twitter', 'email', 'whatsapp', 'linkedin', 'link']}
+							global={global}
+						/>
+						<Embed
+							url={org.donateUrl}
+							name={org.title}
+						/>
+					</div>
+				)}
+			/>
+		)
 
 		return (
 			<React.Fragment>
@@ -111,29 +143,8 @@ RaiselyComponents => {
 						<i className="material-icons">code</i>
 						Embed
 					</button> */}
-					<Modal
-						button
-						buttonTitle="Embed"
-						onClose={() => setShowEmbed(false)}
-						modalContent={() => (
-							<Embed
-								url={org.donateUrl}
-								name={org.title}
-							/>
-						)}
-					/>
-					{showEmbed && <Modal
-						button
-						automatic
-						buttonTitle="Embed"
-						onClose={() => setShowEmbed(false)}
-						modalContent={() => (
-							<Embed
-								url={org.donateUrl}
-								name={org.title}
-							/>
-						)}
-					/>}
+					<ShareModal />
+					{showEmbed && <ShareModal automatic />}
 					<span className="highlight-actions__divider">-</span>
 					<a href="#list">Or choose from the list 👇</a>
 				</div>
@@ -164,7 +175,7 @@ RaiselyComponents => {
 			if (!mergedSources[source.country]) mergedSources[source.country] = [];
 			mergedSources[source.country].push(source.url);
 		});
-		console.log(mergedSources, countryList)
+
 		return (
 			<div className="about__wrapper">
 				<p>
@@ -410,6 +421,7 @@ RaiselyComponents => {
 						data={countryData}
 						sources={sources}
 						countryList={countryList}
+						global={global}
 					/>
 					<ListOrgansinations data={countryData} />
 				</div>
