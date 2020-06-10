@@ -1,9 +1,33 @@
 const _ = require('lodash');
+const { default: PQueue } = require('p-queue');
 const pMap = require('p-map');
 const { LogoScrape } = require("logo-scrape")
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const axios = require('axios');
 const cache = require('nano-cache');
+
+/**
+ * Cloud function to fetch links for YouHaveOur.Support
+ *
+ * Fetches links that have been compiled from community sources
+ * into a main spreadsheet
+ *
+ * This function responds with the following JSON:
+ * {
+ *   sources: [{ country: 'AU', documentKey: '...' }],
+ *   data: {
+ *     'AU': [{ title, description, donateUrl, logo, source }],
+ *   }
+ * }
+ *
+ * The information is fetched from
+ * 1. Local nano-cache, refreshed every 30 minutes from:
+ * 2. Main spreadsheet
+ *
+ * Whenever the cache is refreshed it also kicks off a background process
+ * to check all primary sources for updates and update the main spreasheet
+ * and add/remove links and attempt to find an appropriate logo
+ */
 
 // Google spreadsheet with additional info and overrides from
 // the community sourced sheets
@@ -49,16 +73,10 @@ const spreadsheets = [{
 }];
 
 // Used as a lock to ensure only one thread is fetching the spreadsheet
-// this ensures only one update is sent per thread instance, and means
-// requests coming in during the inital request don't have to wait for
-// a full fetch cycle
+// whenever the cache expires. So multiple requests that come in at the
+// same time can wait on the same promise for the result instead of
+// sending multiple redundant requests
 let getRowsPromise;
-
-// Updating logos will be slow
-// this promise get's fired if at least one logo needs updating
-// but we won't wait for it as it'll keep the client waiting too long
-// instead we'll use the presence of this promise to set no-cache header
-let updateLogoPromises;
 
 /**
  * Cloud Function entry point
@@ -93,6 +111,11 @@ exports.integration = async function integration(req, res) {
 	return doGet(req, res);
 };
 
+/**
+ * Handle get requests, loads the cached or fetched links and places them in the response
+ * @param {*} req
+ * @param {*} res
+ */
 async function doGet(req, res) {
 	// No need to fetch multiple times if concurrent requests are waiting
 	let response = cache.get('response');
@@ -102,7 +125,7 @@ async function doGet(req, res) {
 
 	if (!response) {
 		if (!getRowsPromise) {
-			console.log('Initiating new lookup');
+			console.log('Loading entries from main spreadsheet');
 			getRowsPromise = loadAllCountries();
 		} else {
 			console.log('Queuing concurrent request');
@@ -129,44 +152,160 @@ async function doGet(req, res) {
 	return true;
 }
 
+/**
+ * Loads all the links for all countries from the main spreadsheets
+ * Also initiates an update of the main spreadsheet from primary sources
+ * @returns {object} Returns a map from country code to array of link objects
+ */
 async function loadAllCountries() {
 	const results = {};
-	const metaDocumentPromise = loadGoogleSpreadsheet(META_SHEET);
-	try {
-		await pMap(spreadsheets, (async sheetDescription => {
-			console.log(`Loading from source sheet for country ${sheetDescription.country}`);
+	const metaDocument = await loadGoogleSpreadsheet(META_SHEET);
 
-			const { country } = sheetDescription;
-			const [{ metaRows, metaSheet }, rows] = await Promise.all([
-				loadCountryMetaRows(metaDocumentPromise, sheetDescription),
-				loadSourceRows(sheetDescription),
-			]);
+	// Start an update from the primary sources,
+	// but we won't wait for it to complete
+	// as it will take upwards of 10s
+	updateMain(metaDocument).catch(console.error);
 
-			console.log(`Processing source sheet for country ${sheetDescription.country}`);
+	await pMap(metaDocument.sheetsByIndex, async (sheet) => {
+		if (sheet.title === 'About') return;
+		const rows = await sheet.getRows();
+		const filteredRows = rows
+			.filter(row => !row.hide)
+			.map(row => _.pickBy(row, (value, key) => !(key.startsWith('_') || _.isObject(value))));
+		// Convert rows instances to simple objects with only the values
+		// (strip spreadsheet meta properties)
+		results[sheet.title] = filteredRows;
+	}, { concurrency: 2 });
 
-			// Merge with any meta info we've noted and add logos
-			console.log(`Merging in meta info for country ${sheetDescription.country}`);
-			const mergedRows = await mergeMetaRows(metaSheet, metaRows, sheetDescription, rows);
-			results[country] = mergedRows;
-		}), { concurrency: 2 });
-	} finally {
-		// If a logo update was started, create a promise to clean up when it's done
-		if (updateLogoPromises) finaliseLogoPromises();
-	}
 	return results;
 }
 
-async function loadCountryMetaRows(metaDocumentPromise, sheetDescription) {
-	const metaDocument = await metaDocumentPromise;
-	const metaSheet = await loadSheet({ spreadsheet: metaDocument, sheetTitle: sheetDescription.country });
-	const metaRows = await metaSheet.getRows();
-	return { metaRows, metaSheet };
+/**
+ * Update the main spreadsheet from primary sources
+ * @param {GoogleSpreadsheet} metaDocument
+ */
+async function updateMain(metaDocument) {
+	// Arrange sources by country so we can do
+	// each country sheet without potential concurrent rewrite to the sheet
+	const sourcesByCountry = {};
+	spreadsheets.forEach(sheet => {
+		if (sourcesByCountry[sheet.country]) {
+			sourcesByCountry[sheet.country].push(sheet);
+		} else {
+			sourcesByCountry[sheet.country] = [sheet];
+		}
+	});
+
+	pMap(
+		Object.keys(sourcesByCountry),
+		country => updateCountry(country, sourcesByCountry[country], metaDocument),
+		{ concurrency: 2 }
+	);
 }
 
+/**
+ * Update a country worksheet in the main sheet
+ * Goes through each of the sources for that country and
+ * * Adds missing rows
+ * * Clears the source column if the row is no longer in the source sheet
+ * * Tries to find a logo if one is missing (or twitter is requested)
+ *
+ * @param {string} country Country code to work on (eg UK, AU)
+ * @param {object[]} sources Source for this country
+ * @param {GoogleSpreadsheet} metaDocument The previously loaded main spreadsheet
+ */
+async function updateCountry(country, sources, metaDocument) {
+	const countrySheet = await loadSheet({ document: metaDocument, sheetTitle: country });
+	const countryRows = await countrySheet.getRows();
+
+	// To keep promises managable
+	const queue = new PQueue({ concurrency: 3 });
+	const enqueue = fn => queue.add(() => fn().catch(console.error));
+
+	pMap(sources, async (source, index) => {
+		const sourceUrl = `https://docs.google.com/spreadsheets/d/${source.documentKey}/edit#gid=854958934`;
+		console.log(`Processing source sheet ${index + 1} for country ${country}: ${sourceUrl}`);
+
+		const rows = await loadSourceRows(source);
+
+		// Get all the rows that were from this source
+		// then subtract from the list as we iterate over the rows in the source
+		// leaving only rows that used to be in the source, but aren't any
+		// more
+		const toDelete = countryRows.filter(r => r.source === sourceUrl);
+
+		let rowsWithoutLogos = [];
+		let updated = 0;
+
+		const toInsert = [];
+		// Find rows that need to be inserted
+		// Find rows to be hidden
+		rows.forEach(row => {
+			const existingRow = countryRows.find(r => r.donateUrl === row.donateUrl);
+			if (existingRow) {
+				// If the row is unclaimed by a source, add a reference to this source
+				if (!existingRow.source) {
+					existingRow.source = sourceUrl;
+					updated += 1;
+					enqueue(() => {
+						console.log(`Updating row ${existingRow.donateUrl}`);
+						return existingRow.save()
+					});
+				}
+				// This row is current, so don't delete it
+				_.pull(toDelete, existingRow);
+
+				// Add logo if it's missing or twitter is requested
+				if (!existingRow.logo || existingRow.logo.toLowerCase() === 'twitter') rowsWithoutLogos.push(existingRow);
+			} else {
+				row.source = sourceUrl;
+				toInsert.push(row);
+			}
+		});
+		if (updated) console.log(`Updating ${updated} rows`);
+		enqueue(async () => {
+			if (toInsert.length) {
+				console.log(`Inserting ${toInsert.length} rows`);
+				const newRows = await countrySheet.addRows(toInsert);
+				// All new rows will need logos fetched
+				rowsWithoutLogos = rowsWithoutLogos.concat(newRows);
+			}
+		});
+		// We need to let all promises resolve so that all new rows are inserted
+		// before we go on to update any logos
+		await queue.onEmpty();
+		// Kick off the logo fetch, but don't await it, we can move on to the next
+		// source while logos are being fetched as that will affect different rows
+		if (rowsWithoutLogos.length) enqueue(() => updateLogos(countrySheet, rowsWithoutLogos));
+		if (toDelete.length) enqueue(() => {
+			console.log(`Hiding ${toDelete.length} rows that are no longer in the source sheet`);
+			toDelete.forEach(row => {
+				row.source = '';
+				enqueue(() => row.save());
+			})
+
+		})
+	}, { concurrency: 1 });
+
+	// Wait for the queue to fully drain
+	// (ie any remaining logo fetches)
+	await queue.onEmpty();
+}
+
+/**
+ * Load the rows from a source spreadsheet
+ * NOTE this doesn't return a SpreadsheetRow as we have to work cell by cell
+ * on community spreadsheets
+ * @param {object} sheetDescription
+ * @reutrns {Promise<object[]>}
+ */
 async function loadSourceRows(sheetDescription) {
 	const { documentKey, sheetTitle } = sheetDescription;
 	const sheet = await loadSheet({ documentKey, sheetTitle })
 
+	// The getRows approach assumes the first row is the header
+	// many of the community spreadsheets have information prior to the header row
+	// so we need to work cell by cell to find the header row and the info rows below
 	await sheet.loadCells();
 
 	let rowIndex = 0;
@@ -197,6 +336,8 @@ async function loadSourceRows(sheetDescription) {
 			// which causes problems for the scraper
 			const replacer = /^http[s]?:\/\//i;
 			rowAsObject.donateUrl = rowAsObject.donateUrl.replace(replacer, m => m.toLowerCase());
+
+			// No point adding rows without valid urls
 			const validUrl = rowAsObject.donateUrl.startsWith('http://') || rowAsObject.donateUrl.startsWith('https://')
 			if (validUrl) rows.push(rowAsObject);
 		}
@@ -206,6 +347,13 @@ async function loadSourceRows(sheetDescription) {
 	return rows;
 }
 
+/**
+ * Get a row as an array of cell values
+ * @param {GoogleWorksheet} sheet
+ * @param {integer} rowIndex
+ * @param {integer} width
+ * @returns {string[]}
+ */
 function getRowFromCells(sheet, rowIndex, width) {
 	const row = [];
 	for (let i=0; i < width; i++) {
@@ -214,6 +362,10 @@ function getRowFromCells(sheet, rowIndex, width) {
 	return row;
 }
 
+/**
+ * Load a google spreadsheet document
+ * @param {string} sheetKey Key of the document
+ */
 async function loadGoogleSpreadsheet(sheetKey) {
 	// spreadsheet key is the long id in the sheets URL
 	const doc = new GoogleSpreadsheet(sheetKey);
@@ -237,54 +389,34 @@ async function loadGoogleSpreadsheet(sheetKey) {
 	return doc;
 }
 
-async function loadSheet({ documentKey, spreadsheet, sheetTitle }) {
-	const doc = spreadsheet || await loadGoogleSpreadsheet(documentKey);
+/**
+ * Load a GoogleWorksheet from a GoogleSpreadsheet
+ * Can either load from an already loaded document, or can load
+ * the spreadsheet by given documentKey
+ * @param {*} opts
+ * @param {string} opts.documentKey Key of a GoogleSpreadsheet to load
+ * @param {GoogleSpreadsheet} opts.document An already loaded document
+ * @param {string} sheetTitle Title of the worksheet to load, returns the first sheet if not specified
+ */
+async function loadSheet({ documentKey, document, sheetTitle }) {
+	const doc = document || await loadGoogleSpreadsheet(documentKey);
 
 	const sheet = sheetTitle ? doc.sheetsByIndex.find(s => s.title === sheetTitle) : doc.sheetsByIndex[0];
 
 	return sheet;
 }
 
-async function mergeMetaRows(metaSheet, metaRows, sheetDescription, rows) {
-	const mergedRows = [];
-	const newMetaRows = [];
-
-	rows.forEach(row => {
-		const metaRow = metaRows.find(mr => mr.donateUrl === row.donateUrl);
-		let newRow;
-		if (metaRow) {
-			// Pick just the values, or we'll get circular referenes trying to
-			// serialise
-			const rawMeta = _.pickBy(metaRow, (value, key) => !(key.startsWith('_') || _.isObject(value)));
-			newRow = { ...row, ...rawMeta };
-		} else {
-			newRow = row;
-			newMetaRows.push(row);
-		}
-		if (!newRow.hide) mergedRows.push(newRow);
-	});
-
-	const newRows = await metaSheet.addRows(newMetaRows);
-
-	const allMetaRows = metaRows.concat(newRows);
-	const rowsWithoutLogos = allMetaRows.filter(row => !row.logo && !row.hide);
-	if (rowsWithoutLogos.length) {
-		if (!updateLogoPromises) updateLogoPromises = [];
-		updateLogoPromises.push(updateLogos(metaSheet, rowsWithoutLogos));
-	}
-
-	// Replace any logo's that are set to (none) with null
-	metaRows.forEach(row => {
-		if (row.logo) {
-			if (!(row.logo.startsWith('http://') || row.logo.startsWith('https://'))) {
-				row.logo = null;
-			}
-		}
-	});
-
-	return mergedRows;
-}
-
+/**
+ * Attempt to find a logo for the given row
+ * Uses LogoScrape to find a logo
+ * If that fails, (or if the row.logo === 'twitter') scans the page for
+ * twitter.com/<username> to find a twitter username and uses the twitter avatar
+ *
+ * If a logo is found, the row.logo is set to the url
+ * If not logo is found, row.logo is set to '(none)'
+ * Will save the row
+ * @param {GoogleSpreadsheetRow} row
+ */
 async function getLogo(row) {
 	try {
 		let logo;
@@ -301,6 +433,7 @@ async function getLogo(row) {
 			if (twitterLogo) logo = twitterLogo;
 		}
 		row.logo = logo || '(none)';
+		if (logo !== '(none)') console.log(`Found logo: ${row.logo}`);
 		await row.save();
 	} catch (e) {
 		console.error(e);
@@ -311,11 +444,18 @@ async function getLogo(row) {
 	}
 }
 
+/**
+ * Attempt to find a twitter logo for a page
+ * Loads the body of the page and searches for twitter.com/<username>
+ * @param {GoogleSpreadsheetRow} row
+ * @return {string} The avatar url or null
+ */
 async function scrapeTwitterLogo(row) {
 	const response = await axios(row.donateUrl);
 	const body = response.data;
 
 	const matcher = /twitter\.com\/([A-Za-z0-9]+)[/?#"']/g;
+	// Don't logos from these twitter accounts
 	const reservedWords = ['intent', 'about', 'me', 'signup', 'gofundme'];
 
 	let match;
@@ -328,21 +468,15 @@ async function scrapeTwitterLogo(row) {
 	return null;
 }
 
+/**
+ * Update the logos for the given rows
+ * (batches the updates)
+ * @param {object} sheetDescription
+ * @param {GoogleSpreadsheetRow[]} rowsWithoutLogos
+ */
 async function updateLogos(sheetDescription, rowsWithoutLogos) {
 	console.log(`Updating logos for ${rowsWithoutLogos.length} rows`);
 	// Fetch logo's 5 at a time
-	return pMap(rowsWithoutLogos, getLogo, { concurrency: 5 });
+	return pMap(rowsWithoutLogos, getLogo, { concurrency: 4 });
 }
 
-/**
- * Handler to ensure
- */
-async function finaliseLogoPromises() {
-	try {
-		await Promise.all(updateLogoPromises)
-	} catch (e) {
-		console.error(e);
-	} finally {
-		updateLogoPromises = null;
-	}
-}
