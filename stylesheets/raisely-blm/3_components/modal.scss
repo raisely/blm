@@ -1,0 +1,63 @@
+
+
+.modal {
+
+    &__back {
+        background: black;
+        border: 1em solid white;
+        pointer-events: none;
+    }
+
+    &__content {
+        max-width: none;
+        padding: 0;
+        
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        align-self: stretch;
+        
+        &-box {
+            background: black;
+            text-align: center;
+            margin: 1rem;
+            padding: 5vmin;
+            height: auto;
+            width: 100%;
+            max-width: 800px;
+
+            &,
+            p {
+                font-size: 1.33rem;
+            }
+
+            p {
+                margin-bottom: .75em;
+            }
+        }
+    }
+
+    &__close {
+        position: fixed;
+        font-size: 2.5em;
+        top: .66em;
+        right: .66em;
+        bottom: unset;
+        width: 1em;
+        height: 1em;
+        
+        @include respond-to('mobile') {
+            font-size: 1.5em;
+        }
+
+        .icon {
+            font-size: 1em;
+            width: 1em;
+            height: 1em;
+        }
+    }
+
+    .embed__wrapper {
+        border: none;
+    }
+}

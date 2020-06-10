@@ -1,0 +1,50 @@
+.link-button {
+    -webkit-appearance: none;
+    appearance: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    
+    display: flex;
+    align-items: center;
+    
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    
+    i,
+    &:before {
+        font-size: 160%;
+        margin-right: .33em;
+        opacity: .75;
+        transition: opacity .5s $easePop;
+        -webkit-backface-visibility: hidden;
+        transform: tranlateZ(1px);
+    }
+    
+    @include overrideLink() {
+        font-weight: 600;
+    }
+
+    &:hover i,
+    &:hover:before {
+        opacity: 1;
+        transition:
+            opacity .5s $easePop,
+            transform .5s $easePop
+        ;
+    }
+
+   &:hover .loop {
+        transform: rotate(180deg);
+    }
+    
+    &:focus i,
+    &:focus:before {
+        opacity: 1;
+    }
+}

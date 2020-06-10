@@ -1,0 +1,21 @@
+.source-list {
+    margin-top: 2em;
+
+    ul {
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+    }
+
+    li:after {
+        content: '-';
+        display: inline-block;
+        margin: 0 1em;
+    }
+
+    li:last-of-type:after {
+        content: none;
+    }
+}

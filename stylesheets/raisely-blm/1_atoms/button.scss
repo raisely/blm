@@ -1,0 +1,22 @@
+.button {
+    line-height: 1;
+
+    &:not(.override) {
+        font-weight: 800;
+    }
+
+    .thin {
+        font-weight: 300;
+    }
+}
+
+@include respond-to('mobile') {
+
+    .button {
+        font-size: 90%;
+    }
+    
+    .button--cta {
+        font-size: 100%;
+    }
+}
