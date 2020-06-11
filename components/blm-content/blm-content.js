@@ -13,6 +13,13 @@ RaiselyComponents => {
 		return obj[Math.floor(Math.random() * obj.length)];
 	};
 
+	const Illustrations = () => (
+		<div className="illys">
+			<img className="illys__illy illys__illy--left" src="https://raisely-images.imgix.net/raisely-blm/uploads/illy-left-png-c5f7db.png" />
+			<img className="illys__illy illys__illy--right" src="https://raisely-images.imgix.net/raisely-blm/uploads/illy-right-png-4dbfb9.png" />
+		</div>
+	)
+
 	const CountrySelector = ({ countries, current, handleChange }) => {
 		return (
 			<div className="country-select">
@@ -100,6 +107,12 @@ RaiselyComponents => {
 					rel="noopener"
 					target="_blank"
 				>
+					<div className="highlight-org__edge">
+						<span />
+						<span />
+						<span />
+						<span />
+					</div>
 					<div className="highlight-org__content">
 						<OrganisationLogo org={org} />
 						<div className="highlight-org__content-description">
@@ -148,7 +161,7 @@ RaiselyComponents => {
 					<span className="highlight-actions__divider">-</span>
 					<a href="#list">Or choose from the list 👇</a>
 				</div>
-				<div className="about-section">
+				<div className="about-section" id="list">
 					<i className="material-icons">error_outline</i>
 					<p className="small">
 						The information has been compiled automatically from community sources. It has not been vetted.
@@ -216,7 +229,7 @@ RaiselyComponents => {
 
 	const ListOrgansinations = ({ data }) => {
 		return (
-			<section className="organisations" id="list">
+			<section className="organisations">
 				{data &&
 					data.map(org => (
 						<a
@@ -398,6 +411,7 @@ RaiselyComponents => {
 
 		return (
 			<section className="content">
+				<Illustrations />
 				{current && (
 					<h1 className="title">
 						<div className="title__before">

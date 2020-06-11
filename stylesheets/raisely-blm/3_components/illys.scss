@@ -1,0 +1,29 @@
+.illys {
+	position: absolute;
+	top: 10vh;
+	left: 50%;
+	height: 80vh;
+	width: 85vw;
+	transform: translate(-50%,0);
+	transform: translate3d(-50%,0,0);
+	pointer-events: none;
+	min-height: 550px;
+
+	@include respond-to('tablet') {
+		display: none;
+	}
+
+	&__illy {
+		position: absolute;
+		bottom: 0;
+		width: 13.5vw;
+
+		&--left {
+			left: 0;
+		}
+
+		&--right {
+			right: 0;
+		}
+	}
+}
