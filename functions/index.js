@@ -38,6 +38,15 @@ const allowedOrigins = ['.raisely.com', 'youhaveour.support'];
 
 const spreadsheets = [{
 	country: 'AU',
+	documentKey: '1uhPa_kUCZXcoxJKwPAkKG6XJtER1QH6ZYpJk2EkhZq4',
+	keyMap: {
+		title: 'title',
+		description: 'description',
+		donateUrl: 'donateUrl',
+		logo: 'logo',
+	},
+}, {
+	country: 'AU',
 	documentKey: '1kpse8wqYdjmPrtJPLWnT4RPKVK_-bmQfVP_xDg0d3g4',
 	keyMap: {
 		title: 'Organisation',
