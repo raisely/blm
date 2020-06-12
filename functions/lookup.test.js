@@ -47,6 +47,9 @@ describe('Lookup main sheet', () => {
 				}
 			});
 			itSucceeds();
+			it('refresh is false', () => {
+				expect(res.body.refresh).to.be.false;
+			});
 		});
 	});
 

@@ -81,6 +81,8 @@ async function doGet(req, res) {
 	// No need to fetch multiple times if concurrent requests are waiting
 	let response = cache.get('response');
 
+	let refresh = false;
+
 	// Force a fresh lookup if noCache is passed
 	if (req.query.noCache) {
 		console.log('noCache flagged, forcing fetch from main spreadsheet');
@@ -91,6 +93,7 @@ async function doGet(req, res) {
 		if (!getRowsPromise) {
 			console.log('Loading entries from main spreadsheet');
 			getRowsPromise = loadAllCountries();
+			refresh = true;
 		} else {
 			console.log('Queuing concurrent request');
 		}
@@ -103,8 +106,9 @@ async function doGet(req, res) {
 			ttl: 30 * 60 * 1000,
 		});
 	}
+	const httpResponse = { ...response, refresh };
 
-	res.status(200).send(response);
+	res.status(200).send(httpResponse);
 	return true;
 }
 
