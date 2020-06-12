@@ -33,6 +33,21 @@ describe('Google Sheets Cloud Function', () => {
 			itReturnsRows();
 			itCanSerialise();
 		});
+
+		describe('Load from cache', () => {
+			before(async function beforeSecond() {
+				({ req, res } = prepare());
+
+				try {
+					result = await integration(req, res);
+					return result;
+				} catch (e) {
+					console.error(e);
+					throw e;
+				}
+			});
+			itSucceeds();
+		});
 	});
 
 	/**
