@@ -130,7 +130,10 @@ async function doGet(req, res) {
 	let response = cache.get('response');
 
 	// Force a fresh lookup if noCache is passed
-	if (req.query.noCache) response = null;
+	if (req.query.noCache) {
+		console.log('noCache flagged, forcing fetch from main spreadsheet');
+		response = null;
+	}
 
 	if (!response) {
 		if (!getRowsPromise) {
