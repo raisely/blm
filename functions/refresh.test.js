@@ -3,8 +3,9 @@ const { integration } = require('./refresh');
 
 const { expect } = chai;
 
-
-describe('Update main sheet', () => {
+// Don't run this test by default as it uses up quota
+// TODO nock the google sheets for this test
+describe.skip('Update main sheet', () => {
 	let req;
 	let res;
 	let result;
@@ -15,8 +16,8 @@ describe('Update main sheet', () => {
 		process.env.GOOGLE_PRIVATE_KEY = testCredentials.private_key;
 	});
 
-	describe.only('GET', () => {
-		describe('Load links', () => {
+	describe('GET', () => {
+		describe('Conduct refresh', () => {
 			before(async function beforeFirst() {
 				({ req, res } = prepare());
 

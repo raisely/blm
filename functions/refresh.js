@@ -4,6 +4,7 @@ const pMap = require('p-map');
 const { LogoScrape } = require("logo-scrape")
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const axios = require('axios');
+const moment = require('moment');
 
 /**
  * Cloud function to update links for YouHaveOur.Support
@@ -116,11 +117,14 @@ async function doGet(req, res) {
 	try {
 		await updatePromise;
 	} catch(error) {
+		console.error(error);
 		res.status(500).send({
 			message: error.message,
 		})
+	} finally {
+		// Always clear the promise so it can run again
+		updatePromise = null;
 	}
-	updatePromise = null;
 
 	res.status(200).send({
 		message: 'Update completed',
@@ -135,6 +139,20 @@ async function doGet(req, res) {
  */
 async function updateMain(force) {
 	const metaDocument = await loadGoogleSpreadsheet(META_SHEET);
+
+	if (!force) {
+		const aboutSheet = await loadSheet({ document: metaDocument, sheetTitle: 'About' });
+		await aboutSheet.loadCells('A20:B20');
+		const lastUpdatedCell = aboutSheet.getCellByA1('B20');
+		const nextUpdate = moment(lastUpdatedCell.value).add(30, 'minutes');
+		const now = moment();
+		if (now.isBefore(nextUpdate)) {
+			console.log('Update not due yet, aborting');
+			return;
+		}
+	} else {
+		console.log('Update forced');
+	}
 
 	// Arrange sources by country so we can do
 	// each country sheet without potential concurrent rewrite to the sheet
@@ -154,7 +172,15 @@ async function updateMain(force) {
 		// and we haven't a lot of memory allocated to the function
 		{ concurrency: 1 }
 	);
+
 	console.log('Finished main spreadsheet update');
+
+	// Set the date updated
+	const aboutSheet = await loadSheet({ document: metaDocument, sheetTitle: 'About' });
+	await aboutSheet.loadCells('A20:B20');
+	const lastUpdatedCell = aboutSheet.getCellByA1('B20');
+	lastUpdatedCell.value = new Date().toISOString();
+	await aboutSheet.saveUpdatedCells();
 }
 
 /**
