@@ -1,0 +1,10 @@
+.separator {
+	$size: .5rem;
+	border: 2px solid white;
+	width: $size;
+	height: $size;
+	display: inline-block;
+	transform: rotate(45deg);
+	vertical-align: middle;
+	opacity: .5;
+}

@@ -1,0 +1,32 @@
+.contact-us {
+	margin-top: 2.5rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid white;
+
+	font-size: 1rem;
+	text-align: left;
+	    
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+
+	@include respond-to('mobile') {
+		margin-top: 2rem;
+		padding-top: 1rem;
+		flex-direction: column;
+	}
+
+	h4 {
+		width: auto;
+		margin-right: .33em;
+		margin-bottom: 0;
+
+		@include respond-to('mobile') {
+			margin-bottom: .5em;
+		}
+	}
+
+	.button {
+		flex-shrink: 0;
+	}
+}

@@ -1,0 +1,8 @@
+h1 {
+    @include responsive-font-size($heading1FontSize, .5);
+}
+
+p.small,
+.small p {
+    font-size: 90%;
+}

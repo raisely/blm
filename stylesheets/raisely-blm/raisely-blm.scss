@@ -1,0 +1,78 @@
+@font-face {
+    font-family: 'Martin';
+    src: url('https://raisely-images.imgix.net/raisely-blm/uploads/martin-regular-ttf-e-67945-webfont-woff-2-770848.woff2') format('woff2'),
+         url('https://raisely-images.imgix.net/raisely-blm/uploads/martin-regular-ttf-e-67945-webfont-woff-577d2d.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+$illyPersonFist1: 'https://raisely-images.imgix.net/raisely-blm/uploads/figure-three-png-e57031.png';
+$illyPersonFist2: 'https://raisely-images.imgix.net/raisely-blm/uploads/figure-two-png-3ef7bb.png';
+$illyPersonSign1: 'https://raisely-images.imgix.net/raisely-blm/uploads/figure-four-png-ef30a9.png';
+$illyPersonSign2: 'https://raisely-images.imgix.net/raisely-blm/uploads/figure-one-png-72ca16.png';
+$illySign1: 'https://raisely-images.imgix.net/raisely-blm/uploads/sign-one-png-f2cbf0.png';
+$illySign2: 'https://raisely-images.imgix.net/raisely-blm/uploads/sign-two-png-6f8db4.png';
+$illyFists: 'https://raisely-images.imgix.net/raisely-blm/uploads/fist-png-c2ae78.png';
+
+@mixin overrideLink() {
+
+    &,
+    &:hover,
+    &:focus,
+    &:active {
+        @content;
+    }
+}
+
+body {
+    padding: 1em;
+
+    @include respond-to('mobile') {
+        padding: .5em;
+    }
+
+    &:before,
+    &:after {
+        content: '';
+        position: fixed;
+        right: 1em;
+        bottom: 0;
+        left: 1em;
+        z-index: 2;
+
+        @include respond-to('mobile') {
+            right: .5em;
+            left: .5em;
+        }
+    }
+    
+    // white bar
+    &:before {
+        height: 1em;
+        background: white;
+        box-shadow: 0 calc(-100vh + 1em) 0 white;
+
+         @include respond-to('mobile') {
+            height: .5em;
+            box-shadow: none;
+        }
+    }
+    
+    // gradient
+    &:after {
+        pointer-events: none;
+        height: 2em;
+        margin-bottom: 1em;
+        background: linear-gradient(to top, black, rgba(black,0));
+
+        @include respond-to('mobile') {
+            height: 1em;
+            margin-bottom: .5em;
+        }
+    }
+}
+
+.content__container {
+    max-width: 850px;
+    margin: 0 auto;
+}

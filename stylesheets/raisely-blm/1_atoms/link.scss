@@ -1,0 +1,14 @@
+
+.link {
+	padding: 0;
+	margin: 0;
+
+	i {
+		font-size: 160%;
+		margin-right: .33em;
+		opacity: .75;
+		transition: opacity .5s $easePop;
+		-webkit-backface-visibility: hidden;
+		transform: tranlateZ(1px);
+	}
+}

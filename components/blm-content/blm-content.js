@@ -6,12 +6,19 @@ RaiselyComponents => {
 
 	const { Link, Spinner } = RaiselyComponents;
 	const { Button } = RaiselyComponents.Atoms;
-	const { Modal } = RaiselyComponents.Molecules;
+	const { Modal, RaiselyShare } = RaiselyComponents.Molecules;
 	const { get } = RaiselyComponents.Common;
 
 	const some = obj => {
 		return obj[Math.floor(Math.random() * obj.length)];
 	};
+
+	const Illustrations = () => (
+		<div className="illys">
+			<img className="illys__illy illys__illy--left" src="https://raisely-images.imgix.net/raisely-blm/uploads/illy-left-png-c5f7db.png" />
+			<img className="illys__illy illys__illy--right" src="https://raisely-images.imgix.net/raisely-blm/uploads/illy-right-png-4dbfb9.png" />
+		</div>
+	)
 
 	const CountrySelector = ({ countries, current, handleChange }) => {
 		return (
@@ -28,37 +35,69 @@ RaiselyComponents => {
 					{/* <option value="rest">GLOBAL</option> */}
 				</select>
 				{current.rest ? "🌍" : current.flag}
+				<i className="material-icons">expand_more</i>
 			</div>
 		);
 	};
 
 	const OrganisationLogo = ({ org }) => {
+		let logo = org.logo;
+		let hasIlly = false;
+
 		if (
-			!org.logo
-			|| org.logo === '(none)'
-			|| org.logo.includes('.ico')
-			|| org.logo.includes('favicon')
-		) return null;
+			!logo
+			|| logo === '(none)'
+			|| logo.includes('.ico')
+			|| logo.includes('favicon')
+		) {
+			// pick random illustration
+			logo = some(['https://raisely-images.imgix.net/raisely-blm/uploads/figure-three-png-e57031.png', 'https://raisely-images.imgix.net/raisely-blm/uploads/figure-two-png-3ef7bb.png', 'https://raisely-images.imgix.net/raisely-blm/uploads/figure-four-png-ef30a9.png', 'https://raisely-images.imgix.net/raisely-blm/uploads/figure-one-png-72ca16.png']);
+			hasIlly = true;
+		}
 
 		return (
-			<div className="organisation-logo">
+			<div className={`organisation-logo ${hasIlly ? 'organisation-logo--has-illy' : ''}`}>
 				<span
 					className="organisation-logo__img organisation-logo__img--invert"
-					style={{ backgroundImage: `url(${org.logo})` }}
+					style={{ backgroundImage: `url(${logo})` }}
 				/>
 				<span
 					className="organisation-logo__img organisation-logo__img--color"
-					style={{ backgroundImage: `url(${org.logo})` }}
+					style={{ backgroundImage: `url(${logo})` }}
 					title={`${org.title}'s logo`}
 				/>
 			</div>
 		);
 	};
 
-	const HighlightOrganisation = ({ org, setHighlight, data, sources, countryList }) => {
+	const HighlightOrganisation = ({ org, setHighlight, data, sources, countryList, country, global }) => {
 		if (!org || !org.donateUrl) return null;
 
 		const [showEmbed, setShowEmbed] = React.useState();
+
+		const ShareModal = ({ automatic }) => (
+			<Modal
+				button
+				automatic={automatic}
+				buttonTitle="Share"
+				onClose={() => setShowEmbed(false)}
+				modalContent={() => (
+					<div className="share-modal">
+						<h2>📣&nbsp;Spread the word</h2>
+						<RaiselyShare
+							theme="filled"
+							size="normal"
+							networks={['facebook', 'twitter', 'email', 'whatsapp', 'linkedin', 'link']}
+							global={global}
+						/>
+						<Embed
+							url={org.donateUrl}
+							name={org.title}
+						/>
+					</div>
+				)}
+			/>
+		)
 
 		return (
 			<React.Fragment>
@@ -68,6 +107,12 @@ RaiselyComponents => {
 					rel="noopener"
 					target="_blank"
 				>
+					<div className="highlight-org__edge">
+						<span />
+						<span />
+						<span />
+						<span />
+					</div>
 					<div className="highlight-org__content">
 						<OrganisationLogo org={org} />
 						<div className="highlight-org__content-description">
@@ -111,33 +156,13 @@ RaiselyComponents => {
 						<i className="material-icons">code</i>
 						Embed
 					</button> */}
-					<Modal
-						button
-						buttonTitle="Embed"
-						onClose={() => setShowEmbed(false)}
-						modalContent={() => (
-							<Embed
-								url={org.donateUrl}
-								name={org.title}
-							/>
-						)}
-					/>
-					{showEmbed && <Modal
-						button
-						automatic
-						buttonTitle="Embed"
-						onClose={() => setShowEmbed(false)}
-						modalContent={() => (
-							<Embed
-								url={org.donateUrl}
-								name={org.title}
-							/>
-						)}
-					/>}
+					<ShareModal />
+					{showEmbed && <ShareModal automatic />}
 					<span className="highlight-actions__divider">-</span>
 					<a href="#list">Or choose from the list 👇</a>
+					<span className="separator" />
 				</div>
-				<div className="about-section">
+				<div className="about-section" id="list">
 					<i className="material-icons">error_outline</i>
 					<p className="small">
 						The information has been compiled automatically from community sources. It has not been vetted.
@@ -150,6 +175,7 @@ RaiselyComponents => {
 							<About
 								sources={sources}
 								countryList={countryList}
+								country={country}
 							/>
 						)}
 					/>
@@ -158,13 +184,13 @@ RaiselyComponents => {
 		);
 	};
 
-	const About = ({ sources, countryList }) => {
+	const About = ({ sources, countryList, country }) => {
 		const mergedSources = {};
 		sources.forEach(source => {
 			if (!mergedSources[source.country]) mergedSources[source.country] = [];
 			mergedSources[source.country].push(source.url);
 		});
-		console.log(mergedSources, countryList)
+
 		return (
 			<div className="about__wrapper">
 				<p>
@@ -174,38 +200,42 @@ RaiselyComponents => {
 				<p>
 					The information in this website is compiled automatically from the community created spreadsheets listed below.
 				</p>
-				<p>
-					Feel free to{' '}
-					<Link href="https://github.com/raisely/blm#readme">contact us</Link>{' '}
-					to share resources that should be added, or corrections that need to be made.
-				</p>
 				<div className="source-list">
-					<h3>Sources</h3>
+					<h4>Sources</h4>
 					<ul>
 						{Object.keys(mergedSources).map(countryCode => (
-							<li>
-								<strong>
-									{get(countryList[countryCode.toUpperCase()], 'name', countryCode.toUpperCase())}
-								</strong>
-								{' - '}
-								{mergedSources[countryCode].map((source, i) => (
-									<React.Fragment>
-										<Link href={source}>Source {i + 1}</Link>
-										{((i + 1) < mergedSources[countryCode].length) ? ',' : ''}
-									</React.Fragment>
-								))}
-
-							</li>
+							<React.Fragment>
+								<li>
+									<strong>
+										{get(countryList[countryCode.toUpperCase()], 'name', countryCode.toUpperCase())}
+									</strong>
+									{' - '}
+									{mergedSources[countryCode].map((source, i) => (
+										<React.Fragment>
+											<Link
+												href={source}
+												target="_blank"
+												rel="noopener"
+											>
+												Source {i + 1}
+											</Link>
+											{((i + 1) < mergedSources[countryCode].length) ? ', ' : ''}
+										</React.Fragment>
+									))}
+								</li>
+								<span className="separator" />
+							</React.Fragment>
 						))}
 					</ul>
 				</div>
+				<ContactUs email="support@raisely.com" country={country} />
 			</div>
 		);
 	};
 
 	const ListOrgansinations = ({ data }) => {
 		return (
-			<section className="organisations" id="list">
+			<section className="organisations">
 				{data &&
 					data.map(org => (
 						<a
@@ -230,6 +260,32 @@ RaiselyComponents => {
 							</div>
 						</a>
 					))}
+			</section>
+		);
+	};
+
+	const ContactUs = ({ country, email }) => {
+		const subject = `Add an Organisation | YouHaveOur.Support`;
+		const body = `
+			I want to add this organisation to your list of resources:
+
+			Organisation Name:
+			Country: ${country && country}
+			Description (3 sentences or less):
+			Donation Page URL:
+			Logo: Please attach your logo to this message. Recommended image dimensions are 400px x 400px (the size of your Twitter profile image), and the image should be 2MB or smaller. 
+		`;
+
+		const parseString = (str) => encodeURIComponent(str.trim().replace(/\t/g, '')).replace(/%3A/g, ':')
+
+		const message = `mailto:${email}?subject=${parseString(subject)}&body=${parseString(body)}`;
+
+		return (
+			<section className="contact-us">
+				<h4>Don't see your organisation listed?</h4>
+				<a className="button button--primary" href={message}>
+					Add your Organisation
+				</a>
 			</section>
 		);
 	};
@@ -355,7 +411,7 @@ RaiselyComponents => {
 				}
 				setDetectedCountry(nearestCountry);
 			}
-		}, []);
+		}, [detected]);
 
 		React.useEffect(() => {
 			if (!editor) {
@@ -387,6 +443,7 @@ RaiselyComponents => {
 
 		return (
 			<section className="content">
+				<Illustrations />
 				{current && (
 					<h1 className="title">
 						<div className="title__before">
@@ -410,8 +467,11 @@ RaiselyComponents => {
 						data={countryData}
 						sources={sources}
 						countryList={countryList}
+						global={global}
+						country={detectedCountry}
 					/>
 					<ListOrgansinations data={countryData} />
+					{data && <ContactUs country={detectedCountry} email="support@raisely.com" />}
 				</div>
 			</section>
 		);

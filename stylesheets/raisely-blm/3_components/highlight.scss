@@ -1,0 +1,194 @@
+.highlight-org {
+    display: block;
+    border: 2px solid white;
+    padding: 2rem;
+    text-align: center;
+    pointer-events: none;
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+
+    @include respond-to('mobile') {
+         padding: 1rem;
+    }
+
+    @include overrideLink() {
+        text-decoration: none;
+    }
+
+    &__edge {
+        $boxSize: .66em;
+        @include full(-$boxSize);
+
+        span {
+            border: 2px solid white;
+            position: absolute;
+            width: $boxSize;
+            height: $boxSize;
+
+            &:before {
+                content: '';
+                position: absolute;
+                background: black;
+                width: 2px;
+                height: 2px;
+            }
+
+            &:nth-of-type(1) {
+                top: 0;
+                left: 0;
+
+                &:before {
+                    bottom: -2px;
+                    right: 0;
+                }
+            }
+
+            &:nth-of-type(2) {
+                top: 0;
+                right: 0;
+
+                &:before {
+                    bottom: -2px;
+                    left: 0;
+                }
+            }
+
+            &:nth-of-type(3) {
+                bottom: 0;
+                right: 0;
+
+                &:before {
+                    top: -2px;
+                    left: 0;
+                }
+            }
+
+            &:nth-of-type(4) {
+                bottom: 0;
+                left: 0;
+
+                &:before {
+                    top: -2px;
+                    right: 0;
+                }
+            }
+        }
+    }
+
+    &__content {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: center;
+        
+        text-align: left;
+        margin-bottom: 1.5em;
+
+        @include respond-to('mobile') {
+            flex-direction: column;
+            text-align: center;
+            align-items: center;
+        }
+
+        .organisation-logo {
+            margin-right: 1.5em;
+            pointer-events: all;
+
+            @include respond-to('mobile') {
+                margin-bottom: 1em;
+                margin-right: 0;
+            }
+
+            &__img--color {
+                opacity: 1;
+            }
+        }
+
+        h6 {
+            margin-top: 0;
+            pointer-events: all;
+        }
+
+        &-description {
+            flex-basis: 60%;
+            flex-grow: 1;
+        }
+    }
+
+    &__footer {
+
+        .small {
+            margin: 1em auto -.75em;
+            max-width: 50ch;
+
+             @include respond-to('mobile') {
+                margin-bottom: -.25em;
+            }
+        }
+    }
+
+    .button {
+        pointer-events: all;
+    }
+}
+
+.highlight-actions {
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-size: .9rem;
+
+    position: relative;
+    margin: 1em 0 1em;
+    padding-bottom: 2em;
+
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+
+    .separator { 
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(45deg);
+        transform: translate3d(-50%, -50%,0) rotate(45deg);
+    }
+
+    &__divider {
+        margin: 0 1em;
+    }
+
+    a {
+        @include overrideLink() {
+            text-decoration: none;
+        }
+    }
+
+    .modal__button .button {
+        @extend .link-button;
+
+        &:before {
+            content: 'share';
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    }
+}
+
+.highlight-disclaimer {
+    margin-top: 1em;
+    text-align: center;
+}
