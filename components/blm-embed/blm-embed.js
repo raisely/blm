@@ -14,15 +14,16 @@
 
 		const styleBg = 'background: black;';
 		const styleText = 'color: white;';
-		const style = `${styleBg} ${styleText} padding: 1.25rem; width: 100%;`;
+		const style = `${styleBg} ${styleText} padding: 1.25rem; width: 100%; box-sizing: border-box;`;
 
 		const charityName = name || query.name || values.name || 'support #BLM';
 		const charityUrl = url || query.url || values.url || 'https://raisely-blm.raisely.com/';
+		const image = `<img src="https://raisely-images.imgix.net/raisely-crm/uploads/fists-png-f77a8c.png?w=70" style="margin: 0; margin-right: .25em; vertical-align: middle; width: 70px;" />`;
 
 		const getEmbedCode = () => (
 			`<div style="${style}">
-				<p style="font-size: 1rem; text-align: left; margin-top: 0; margin-bottom: .5em; ${styleText}">✊🏿✊🏾✊🏽 ${content}</p>
-				<p style="font-size: 1rem; text-align: left; margin-top: 0; margin-bottom: 0; ${styleText}">You can support equal rights for all by donating to <a style="${styleText} text-decoration: underline; font-weight: bold;" target="_blank" rel="noopener" href="${charityUrl}">${charityName}</a></p>
+				<p style="font-size: 1rem; text-align: left; margin-top: 0; margin-bottom: .5em; ${styleText}">${image}${content}</p>
+				<p style="font-size: 1rem; text-align: left; margin-top: 0; margin-bottom: 0; ${styleText}">You can support equal rights for all by donating to <a style="${styleText} text-decoration: underline; font-weight: bold;" target="_blank" rel="noopener" href="${charityUrl}">${charityName}</a>.</p>
 			</div>`
 		)
 
