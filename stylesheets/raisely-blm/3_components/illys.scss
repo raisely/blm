@@ -8,6 +8,7 @@
 	transform: translate3d(-50%,0,0);
 	pointer-events: none;
 	min-height: 550px;
+	max-height: 42.5vmax;
 
 	@include respond-to('tablet') {
 		display: none;

@@ -70,7 +70,7 @@ RaiselyComponents => {
 		);
 	};
 
-	const HighlightOrganisation = ({ org, setHighlight, data, sources, countryList, global }) => {
+	const HighlightOrganisation = ({ org, setHighlight, data, sources, countryList, country, global }) => {
 		if (!org || !org.donateUrl) return null;
 
 		const [showEmbed, setShowEmbed] = React.useState();
@@ -160,6 +160,7 @@ RaiselyComponents => {
 					{showEmbed && <ShareModal automatic />}
 					<span className="highlight-actions__divider">-</span>
 					<a href="#list">Or choose from the list 👇</a>
+					<span className="separator" />
 				</div>
 				<div className="about-section" id="list">
 					<i className="material-icons">error_outline</i>
@@ -174,6 +175,7 @@ RaiselyComponents => {
 							<About
 								sources={sources}
 								countryList={countryList}
+								country={country}
 							/>
 						)}
 					/>
@@ -182,7 +184,7 @@ RaiselyComponents => {
 		);
 	};
 
-	const About = ({ sources, countryList }) => {
+	const About = ({ sources, countryList, country }) => {
 		const mergedSources = {};
 		sources.forEach(source => {
 			if (!mergedSources[source.country]) mergedSources[source.country] = [];
@@ -198,31 +200,35 @@ RaiselyComponents => {
 				<p>
 					The information in this website is compiled automatically from the community created spreadsheets listed below.
 				</p>
-				<p>
-					Feel free to{' '}
-					<Link href="https://github.com/raisely/blm#readme">contact us</Link>{' '}
-					to share resources that should be added, or corrections that need to be made.
-				</p>
 				<div className="source-list">
-					<h3>Sources</h3>
+					<h4>Sources</h4>
 					<ul>
 						{Object.keys(mergedSources).map(countryCode => (
-							<li>
-								<strong>
-									{get(countryList[countryCode.toUpperCase()], 'name', countryCode.toUpperCase())}
-								</strong>
-								{' - '}
-								{mergedSources[countryCode].map((source, i) => (
-									<React.Fragment>
-										<Link href={source}>Source {i + 1}</Link>
-										{((i + 1) < mergedSources[countryCode].length) ? ',' : ''}
-									</React.Fragment>
-								))}
-
-							</li>
+							<React.Fragment>
+								<li>
+									<strong>
+										{get(countryList[countryCode.toUpperCase()], 'name', countryCode.toUpperCase())}
+									</strong>
+									{' - '}
+									{mergedSources[countryCode].map((source, i) => (
+										<React.Fragment>
+											<Link
+												href={source}
+												target="_blank"
+												rel="noopener"
+											>
+												Source {i + 1}
+											</Link>
+											{((i + 1) < mergedSources[countryCode].length) ? ', ' : ''}
+										</React.Fragment>
+									))}
+								</li>
+								<span className="separator" />
+							</React.Fragment>
 						))}
 					</ul>
 				</div>
+				<ContactUs email="support@raisely.com" country={country} />
 			</div>
 		);
 	};
@@ -254,6 +260,32 @@ RaiselyComponents => {
 							</div>
 						</a>
 					))}
+			</section>
+		);
+	};
+
+	const ContactUs = ({ country, email }) => {
+		const subject = `Add an Organisation | YouHaveOur.Support`;
+		const body = `
+			I want to add this organisation to your list of resources:
+
+			Organisation Name:
+			Country: ${country && country}
+			Description (3 sentences or less):
+			Donation Page URL:
+			Logo: Please attach your logo to this message. Recommended image dimensions are 400px x 400px (the size of your Twitter profile image), and the image should be 2MB or smaller. 
+		`;
+
+		const parseString = (str) => encodeURIComponent(str.trim().replace(/\t/g, '')).replace(/%3A/g, ':')
+
+		const message = `mailto:${email}?subject=${parseString(subject)}&body=${parseString(body)}`;
+
+		return (
+			<section className="contact-us">
+				<h4>Don't see your organisation listed?</h4>
+				<a className="button button--primary" href={message}>
+					Add your Organisation
+				</a>
 			</section>
 		);
 	};
@@ -379,7 +411,7 @@ RaiselyComponents => {
 				}
 				setDetectedCountry(nearestCountry);
 			}
-		}, []);
+		}, [detected]);
 
 		React.useEffect(() => {
 			if (!editor) {
@@ -436,8 +468,10 @@ RaiselyComponents => {
 						sources={sources}
 						countryList={countryList}
 						global={global}
+						country={detectedCountry}
 					/>
 					<ListOrgansinations data={countryData} />
+					{data && <ContactUs country={detectedCountry} email="support@raisely.com" />}
 				</div>
 			</section>
 		);

@@ -19,7 +19,7 @@
 
     &__text {
         display: flex;
-        align-items: center;
+        align-items: baseline;
         margin-bottom: .25em;
 
         @include respond-to('mobile') {

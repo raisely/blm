@@ -1,21 +1,33 @@
 .source-list {
-    margin-top: 2em;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid white;
+    text-align: left;
+    margin-bottom: -.5rem;
+
+    h4 {
+        margin-top: 0;
+    }
 
     ul {
         list-style: none;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
+        padding-left: 0;
+        line-height: 1.6;
     }
 
-    li:after {
-        content: '-';
-        display: inline-block;
-        margin: 0 1em;
+    li {
+        margin-right: 1em;
+
+        &:last-of-type + .separator {
+            display: none;
+        }
     }
 
-    li:last-of-type:after {
-        content: none;
+    .separator {
+        margin-right: 1em;
     }
 }

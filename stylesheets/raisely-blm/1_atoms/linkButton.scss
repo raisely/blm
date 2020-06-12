@@ -23,7 +23,12 @@
         opacity: .75;
         transition: opacity .5s $easePop;
         -webkit-backface-visibility: hidden;
-        transform: tranlateZ(1px);
+        transform: translateZ(1px);
+        position: relative;
+        border: none;
+        left: unset;
+        width: unset;
+        height: unset;
     }
     
     @include overrideLink() {

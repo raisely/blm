@@ -21,7 +21,7 @@
             background: black;
             text-align: center;
             margin: 1rem;
-            padding: 5vmin;
+            // padding: 5vmin;
             height: auto;
             width: 100%;
             max-width: 800px;
@@ -29,6 +29,10 @@
             &,
             p {
                 font-size: 1.33rem;
+
+                @include respond-to('mobile') {
+                    font-size: 1rem;
+                }
             }
 
             p {

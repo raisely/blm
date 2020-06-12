@@ -148,19 +148,12 @@
     justify-content: center;
     align-items: center;
 
-    &:after {
-        $size: .5em;
-        content: '';
-        border: 2px solid white;
-        width: $size;
-        height: $size;
-        display: inline-block;
-        transform: rotate(45deg);
-        opacity: .5;
-
+    .separator { 
         position: absolute;
-        top: calc(100% - #{$size/2});
-        left: calc(50% - #{$size/2});
+        top: 100%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(45deg);
+        transform: translate3d(-50%, -50%,0) rotate(45deg);
     }
 
     &__divider {

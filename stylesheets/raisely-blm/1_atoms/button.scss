@@ -1,5 +1,6 @@
 .button {
     line-height: 1;
+    position: relative;
 
     &:not(.override) {
         font-weight: 800;
@@ -7,6 +8,41 @@
 
     .thin {
         font-weight: 300;
+    }
+
+    $size: .4em;
+    &:before,
+    &:after {
+        content: '';
+        position: absolute;
+        background: black;
+        width: $size;
+        height: $size;
+        top: calc(50% - #{$size/2});
+
+        opacity: 0;
+        transform: scale3d(.5,.5,1) rotate(45deg);
+        transition:
+            opacity .5s $easePop,
+            transform .5s $easePop,
+        ;
+    }
+
+    &:before {
+        left: calc(-#{$size/2} - 2px);
+    }
+    
+    &:after {
+        right: calc(-#{$size/2} - 2px);
+    }
+
+    &:hover {
+
+        &:before,
+        &:after {
+            opacity: 1;
+            transform: scale3d(1,1,1) rotate(45deg);
+        }
     }
 }
 
