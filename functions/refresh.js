@@ -5,6 +5,7 @@ const { LogoScrape } = require("logo-scrape")
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const axios = require('axios');
 const moment = require('moment');
+const isImage = require('is-image-fast');
 
 /**
  * Cloud function to update links for YouHaveOur.Support
@@ -413,7 +414,11 @@ async function getLogo(row) {
 			if (twitterLogo) logo = twitterLogo;
 		}
 		row.logo = logo || '(none)';
-		if (logo !== '(none)') console.log(`Found logo: ${row.logo}`);
+		if (row.logo !== '(none)') {
+			console.log(`Found logo: ${row.logo}`);
+			const linkWorks = isImage(row.logo);
+			if (!linkWorks) row.logo = '(none)';
+		}
 		await row.save();
 	} catch (e) {
 		console.error(e);
