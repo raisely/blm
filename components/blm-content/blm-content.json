@@ -3,7 +3,7 @@
         "version": {
             "type": "number",
             "label": "Current Version of Component",
-            "value": 262
+            "value": 297
         },
         "countries": {
             "id": "countries",

@@ -1,6 +1,8 @@
 RaiselyComponents => {
 	const LOOKUP_PROXY =
 		"https://us-central1-raisely-custom.cloudfunctions.net/blm-lookup";
+	const REFRESH_FN =
+		"https://us-central1-raisely-custom.cloudfunctions.net/blm-refresh";
 
 	const Embed = RaiselyComponents.import('blm-embed');
 
@@ -273,7 +275,7 @@ RaiselyComponents => {
 			Country: ${country && country}
 			Description (3 sentences or less):
 			Donation Page URL:
-			Logo: Please attach your logo to this message. Recommended image dimensions are 400px x 400px (the size of your Twitter profile image), and the image should be 2MB or smaller. 
+			Logo: Please attach your logo to this message. Recommended image dimensions are 400px x 400px (the size of your Twitter profile image), and the image should be 2MB or smaller.
 		`;
 
 		const parseString = (str) => encodeURIComponent(str.trim().replace(/\t/g, '')).replace(/%3A/g, ':')
@@ -382,9 +384,20 @@ RaiselyComponents => {
 					console.error(await response.text());
 				}
 				const body = await response.json();
-				const { data, sources } = body;
+				const { data, sources, refresh } = body;
 				setData(data);
 				setSources(sources);
+				// This is a bit of a hack to do updates on demand
+				// Cloud functions can't do background jobs as they're stopped once they send a response
+				// so we need to separate the update into a different function
+				// We could schdedule that by google cloud scheduler, but it just adds one more piece to manage
+				// and if the site's not getting hits we don't want to do unnecessary updates
+				// so the cloud function that proxies our main spreadsheet caches the response for 30
+				// minutes, if the cache is expired/empty, it asks the client to also send a request
+				// to the update function.
+				// This request will take about 10s, but the results are not shown on screen
+				// so it's ok to leave that connection open while it runs
+				if (refresh) fetch(REFRESH_FN).catch(console.error);
 			} catch (e) {
 				console.error(e);
 			}
