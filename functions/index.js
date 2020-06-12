@@ -208,11 +208,14 @@ async function updateMain(metaDocument) {
 		}
 	});
 
-	pMap(
+	await pMap(
 		Object.keys(sourcesByCountry),
 		country => updateCountry(country, sourcesByCountry[country], metaDocument),
-		{ concurrency: 2 }
+		// Don't run parallelt as each spreadsheet involves loading a lot of rows into memory
+		// and we haven't a lot of memory allocated to the function
+		{ concurrency: 1 }
 	);
+	console.log('Finished main spreadsheet update');
 }
 
 /**
@@ -234,7 +237,7 @@ async function updateCountry(country, sources, metaDocument) {
 	const queue = new PQueue({ concurrency: 3 });
 	const enqueue = fn => queue.add(() => fn().catch(console.error));
 
-	pMap(sources, async (source, index) => {
+	await pMap(sources, async (source, index) => {
 		const sourceUrl = `https://docs.google.com/spreadsheets/d/${source.documentKey}/edit#gid=854958934`;
 		console.log(`Processing source sheet ${index + 1} for country ${country}: ${sourceUrl}`);
 
