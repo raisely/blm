@@ -1,10 +1,10 @@
 const chai = require('chai');
-const { integration } = require('./lookup');
+const { integration } = require('./refresh');
 
 const { expect } = chai;
-const cache = require('nano-cache');
 
-describe('Lookup main sheet', () => {
+
+describe('Update main sheet', () => {
 	let req;
 	let res;
 	let result;
@@ -15,27 +15,9 @@ describe('Lookup main sheet', () => {
 		process.env.GOOGLE_PRIVATE_KEY = testCredentials.private_key;
 	});
 
-	describe('GET', () => {
+	describe.only('GET', () => {
 		describe('Load links', () => {
 			before(async function beforeFirst() {
-				cache.clear();
-				({ req, res } = prepare());
-
-				try {
-					result = await integration(req, res);
-					return result;
-				} catch (e) {
-					console.error(e);
-					throw e;
-				}
-			});
-			itSucceeds();
-			itReturnsRows();
-			itCanSerialise();
-		});
-
-		describe('Load from cache', () => {
-			before(async function beforeSecond() {
 				({ req, res } = prepare());
 
 				try {
@@ -58,17 +40,6 @@ describe('Lookup main sheet', () => {
 		it('has good result', () => {
 			expect(result).to.eq(true);
 			expect(res.statusCode).to.eq(200);
-		});
-	}
-	function itReturnsRows() {
-		it('returns rows', () => {
-			console.log(res.body);
-			expect(Object.keys(res.body.data)).to.include('AU');
-		});
-	}
-	function itCanSerialise() {
-		it('can serialise' , () => {
-			JSON.stringify(res.body);
 		});
 	}
 });
