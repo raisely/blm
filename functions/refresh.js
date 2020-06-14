@@ -140,10 +140,10 @@ async function doGet(req, res) {
  */
 async function updateMain(force) {
 	const metaDocument = await loadGoogleSpreadsheet(META_SHEET);
+	const aboutSheet = await loadSheet({ document: metaDocument, sheetTitle: 'About' });
+	await aboutSheet.loadCells('A20:B20');
 
 	if (!force) {
-		const aboutSheet = await loadSheet({ document: metaDocument, sheetTitle: 'About' });
-		await aboutSheet.loadCells('A20:B20');
 		const lastUpdatedCell = aboutSheet.getCellByA1('B20');
 		const nextUpdate = moment(lastUpdatedCell.value).add(30, 'minutes');
 		const now = moment();
@@ -177,8 +177,6 @@ async function updateMain(force) {
 	console.log('Finished main spreadsheet update');
 
 	// Set the date updated
-	const aboutSheet = await loadSheet({ document: metaDocument, sheetTitle: 'About' });
-	await aboutSheet.loadCells('A20:B20');
 	const lastUpdatedCell = aboutSheet.getCellByA1('B20');
 	lastUpdatedCell.value = new Date().toISOString();
 	await aboutSheet.saveUpdatedCells();
