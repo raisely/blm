@@ -134,7 +134,7 @@ async function loadAllCountries() {
 
 	const sources = [];
 	_.forEach(results, (rows, country) => {
-		_.uniq(rows.map(r => r.source))
+		_.uniq(rows.map(r => r.source).filter(r => r))
 			.forEach(source => sources.push({
 				country,
 				url: source,
