@@ -9,21 +9,30 @@ const cache = require('nano-cache');
  * Fetches links that have been compiled from community sources
  * into a main spreadsheet
  *
- * This function responds with the following JSON:
+ * This function responds with the JSON in the following format:
  * {
- *   sources: [{ country: 'AU', documentKey: '...' }],
+ *   sources: [{ country: 'AU', documentKey: '...' }, ...],
  *   data: {
- *     'AU': [{ title, description, donateUrl, logo, source }],
- *   }
+ *     'AU': [{ title, description, donateUrl, logo, source }, ...],
+ *     'UK': [...],
+ *   },
+ *   // If the data is fresh and not from the cache
+ *   // If this is true it will trigger a refresh of the main spreadsheet
+ *   // from primary sources
+ *   refresh: true,
  * }
  *
  * The information is fetched from
  * 1. Local nano-cache, refreshed every 30 minutes from:
  * 2. Main spreadsheet
  *
- * Whenever the cache is refreshed it also kicks off a background process
- * to check all primary sources for updates and update the main spreasheet
- * and add/remove links and attempt to find an appropriate logo
+ * Whenever the cache is refreshed the calling component will kick off
+ * a request to the refresh cloud function which will compile
+ * primary sources to update the main spreadsheet
+ *
+ * Why not just use a Google Cloud Scheduler to call the refresh?
+ * 1. One less thing to maintain for a micro site
+ * 2. The function will not be run if noone is looking at the site, saves needless updates
  */
 
 // Google spreadsheet with additional info and overrides from
