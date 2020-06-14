@@ -121,19 +121,23 @@ async function loadAllCountries() {
 	const results = {};
 	const metaDocument = await loadGoogleSpreadsheet(META_SHEET);
 
+	// Fetch 2 sheets at a time
 	await pMap(metaDocument.sheetsByIndex, async (sheet) => {
 		if (sheet.title === 'About') return;
 		const rows = await sheet.getRows();
+
+		// Convert GoogleSpreadsheetRow instances to simple objects with only the values
+		// (strip spreadsheet meta properties)
 		const filteredRows = rows
 			.filter(row => !row.hide)
 			.map(row => _.pickBy(row, (value, key) => !(key.startsWith('_') || _.isObject(value))));
-		// Convert rows instances to simple objects with only the values
-		// (strip spreadsheet meta properties)
 		results[sheet.title] = filteredRows;
 	}, { concurrency: 2 });
 
+	// Compile a list of all the spources used for each country
 	const sources = [];
 	_.forEach(results, (rows, country) => {
+		// Select the unique values for the source column for each row
 		_.uniq(rows.map(r => r.source).filter(r => r))
 			.forEach(source => sources.push({
 				country,
