@@ -15,8 +15,10 @@
         pointer-events: all;
 
         @include respond-to('mobile') {
-            width: 100px;
-            height: 100px;
+            width: 20vw;
+            height: 20vw;
+            max-width: 100px;
+            max-height: 100px;
         }
         
         &--invert {

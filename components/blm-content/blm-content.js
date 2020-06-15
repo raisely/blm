@@ -250,17 +250,19 @@ RaiselyComponents => {
 						>
 							<OrganisationLogo org={org} />
 							<div className="organisation__content">
-								<h4>{org.title}</h4>
-								{org.description && <p>{org.description}</p>}
-							</div>
-							<div className="organisation__donate">
-								<Button
-									href={org.donateUrl}
-									rel="noopener"
-									target="_blank"
-								>
-									Donate
-								</Button>
+								<div className="organisation__content-left">
+									<h4>{org.title}</h4>
+									{org.description && <p>{org.description}</p>}
+								</div>
+								<div className="organisation__content-right">
+									<Button
+										href={org.donateUrl}
+										rel="noopener"
+										target="_blank"
+									>
+										Donate
+									</Button>
+								</div>
 							</div>
 						</a>
 					))}
