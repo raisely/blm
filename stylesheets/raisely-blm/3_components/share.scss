@@ -1,0 +1,30 @@
+.share {
+
+	&--icon {
+		display: flex;
+		justify-content: center;
+		flex-wrap: wrap;
+	}
+
+	&-button {
+
+		&--icon {
+			height: unset;
+			width: unset;
+			font-size: 1.75rem;
+			padding: .75rem;
+
+			@include respond-to('mobile') {
+				font-size: 1.25rem;
+				padding: .5rem;
+			}
+			
+			.icon {
+				width: 1em;
+				height: 1em;
+				font-size: inherit;
+				vertical-align: bottom;
+			}
+		}
+	}
+}
