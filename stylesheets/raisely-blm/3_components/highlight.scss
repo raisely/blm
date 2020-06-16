@@ -10,6 +10,7 @@
 
     @include respond-to('mobile') {
          padding: 1rem;
+         margin: 0 1.5vw;
     }
 
     @include overrideLink() {
@@ -98,6 +99,13 @@
             @include respond-to('mobile') {
                 margin-bottom: 1em;
                 margin-right: 0;
+
+                &__img {
+                    width: 25vw;
+                    height: 25vw;
+                    max-width: 110px;
+                    max-height: 110px;
+                }
             }
 
             &__img--color {
@@ -138,6 +146,8 @@
     text-transform: uppercase;
     letter-spacing: .1em;
     font-size: .9rem;
+
+    line-height: 1.6;
 
     position: relative;
     margin: 1em 0 1em;

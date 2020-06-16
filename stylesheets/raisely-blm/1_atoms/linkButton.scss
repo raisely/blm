@@ -23,7 +23,7 @@
         opacity: .75;
         transition: opacity .5s $easePop;
         -webkit-backface-visibility: hidden;
-        transform: translateZ(1px);
+        transform: translateZ(0px);
         position: relative;
         border: none;
         left: unset;

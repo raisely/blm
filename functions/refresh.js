@@ -117,7 +117,7 @@ async function doGet(req, res) {
 	updatePromise = updateMain(req.query.force);
 	try {
 		await updatePromise;
-	} catch(error) {
+	} catch (error) {
 		console.error(error);
 		res.status(500).send({
 			message: error.message,
@@ -335,7 +335,7 @@ async function loadSourceRows(sheetDescription) {
  */
 function getRowFromCells(sheet, rowIndex, width) {
 	const row = [];
-	for (let i=0; i < width; i++) {
+	for (let i = 0; i < width; i++) {
 		row[i] = sheet.getCell(rowIndex, i).value;
 	}
 	return row;

@@ -1,6 +1,7 @@
 
 
 .modal {
+    overscroll-behavior: contain;
 
     &__back {
         background: black;
@@ -11,6 +12,9 @@
     &__content {
         max-width: none;
         padding: 0;
+
+        position: relative;
+        z-index: 1;
         
         display: flex;
         justify-content: center;

@@ -88,7 +88,7 @@ RaiselyComponents => {
 						<h2>📣&nbsp;Spread the word</h2>
 						<RaiselyShare
 							theme="filled"
-							size="normal"
+							size="icon"
 							networks={['facebook', 'twitter', 'email', 'whatsapp', 'linkedin', 'link']}
 							global={global}
 						/>
@@ -108,6 +108,7 @@ RaiselyComponents => {
 					href={org.donateUrl}
 					rel="noopener"
 					target="_blank"
+					id="highlight-org"
 				>
 					<div className="highlight-org__edge">
 						<span />
@@ -134,7 +135,7 @@ RaiselyComponents => {
 					</div>
 				</a>
 				<div className="highlight-actions">
-					<button
+					<a
 						className="link-button"
 						onClick={() => data &&
 							setHighlight(
@@ -146,10 +147,11 @@ RaiselyComponents => {
 								)
 							)
 						}
+						href="#highlight-org"
 					>
 						<i className="material-icons loop">loop</i>
 						Show me another
-					</button>
+					</a>
 					<span className="highlight-actions__divider">-</span>
 					{/* <button
 						className="link-button"
@@ -248,17 +250,19 @@ RaiselyComponents => {
 						>
 							<OrganisationLogo org={org} />
 							<div className="organisation__content">
-								<h4>{org.title}</h4>
-								{org.description && <p>{org.description}</p>}
-							</div>
-							<div className="organisation__donate">
-								<Button
-									href={org.donateUrl}
-									rel="noopener"
-									target="_blank"
-								>
-									Donate
-								</Button>
+								<div className="organisation__content-left">
+									<h4>{org.title}</h4>
+									{org.description && <p>{org.description}</p>}
+								</div>
+								<div className="organisation__content-right">
+									<Button
+										href={org.donateUrl}
+										rel="noopener"
+										target="_blank"
+									>
+										Donate
+									</Button>
+								</div>
 							</div>
 						</a>
 					))}
