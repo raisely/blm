@@ -24,6 +24,17 @@ const allowedOrigins = ['.raisely.com', 'youhaveour.support'];
 const spreadsheets = [{
 	country: 'AU',
 	documentKey: '1uhPa_kUCZXcoxJKwPAkKG6XJtER1QH6ZYpJk2EkhZq4',
+	sheetTitle: 'AUS',
+	keyMap: {
+		title: 'title',
+		description: 'description',
+		donateUrl: 'donateUrl',
+		logo: 'logo',
+	},
+}, {
+	country: 'US',
+	documentKey: '1uhPa_kUCZXcoxJKwPAkKG6XJtER1QH6ZYpJk2EkhZq4',
+	sheetTitle: 'USA',
 	keyMap: {
 		title: 'title',
 		description: 'description',
