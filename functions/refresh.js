@@ -267,14 +267,13 @@ async function updateCountry(country, sources, metaDocument) {
 		// Kick off the logo fetch, but don't await it, we can move on to the next
 		// source while logos are being fetched as that will affect different rows
 		if (rowsWithoutLogos.length) enqueue(() => updateLogos(countrySheet, rowsWithoutLogos));
-		if (toDelete.length) enqueue(() => {
+		if (toDelete.length) {
 			console.log(`Hiding ${toDelete.length} rows that are no longer in the source sheet`);
 			toDelete.forEach(row => {
 				row.source = '';
 				enqueue(() => row.save());
-			})
-
-		})
+			});
+		}
 	}, { concurrency: 1 });
 
 	// Wait for the queue to fully drain
