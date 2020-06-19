@@ -298,6 +298,7 @@ async function updateCountry(country, sources) {
 
 	// Null the sheet to tip off the Garbage Collector to clean it up
 	// so we don't get an out of memory error
+	// https://stackoverflow.com/questions/62461275/any-way-to-hint-force-garbage-collection-on-node-google-cloud-function
 	countrySheet = null;
 	countryRows = null;
 }
