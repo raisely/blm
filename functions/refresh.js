@@ -217,8 +217,8 @@ async function updateMain(force) {
 async function updateCountry(country, sources) {
 	// Load each country sheet separately so GC can clean up that sheet
 	// once we're done updating it
-	const countrySheet = await loadSheet({ documentKey: META_SHEET, sheetTitle: country });
-	const countryRows = await countrySheet.getRows();
+	let countrySheet = await loadSheet({ documentKey: META_SHEET, sheetTitle: country });
+	let countryRows = await countrySheet.getRows();
 
 	// To keep promises managable
 	const queue = new PQueue({ concurrency: 3 });
@@ -228,18 +228,18 @@ async function updateCountry(country, sources) {
 		const sourceUrl = `https://docs.google.com/spreadsheets/d/${source.documentKey}/edit#gid=854958934`;
 		console.log(`Processing source sheet ${index + 1} for country ${country}: ${sourceUrl}`);
 
-		const rows = await loadSourceRows(source);
+		let rows = await loadSourceRows(source);
 
 		// Get all the rows that were from this source
 		// then subtract from the list as we iterate over the rows in the source
 		// leaving only rows that used to be in the source, but aren't any
 		// more
-		const toDelete = countryRows.filter(r => r.source === sourceUrl);
+		let toDelete = countryRows.filter(r => r.source === sourceUrl);
 
 		let rowsWithoutLogos = [];
 		let updated = 0;
 
-		const toInsert = [];
+		let toInsert = [];
 		// Find rows that need to be inserted
 		// Find rows to be hidden
 		rows.forEach(row => {
@@ -286,11 +286,20 @@ async function updateCountry(country, sources) {
 				enqueue(() => row.save());
 			});
 		}
+		rows = null;
+		toDelete = null;
+		toInsert = null;
+		rowsWithoutLogos = null;
 	}, { concurrency: 1 });
 
 	// Wait for the queue to fully drain
 	// (ie any remaining logo fetches)
 	await queue.onEmpty();
+
+	// Null the sheet to tip off the Garbage Collector to clean it up
+	// so we don't get an out of memory error
+	countrySheet = null;
+	countryRows = null;
 }
 
 /**
@@ -302,7 +311,7 @@ async function updateCountry(country, sources) {
  */
 async function loadSourceRows(sheetDescription) {
 	const { documentKey, sheetTitle } = sheetDescription;
-	const sheet = await loadSheet({ documentKey, sheetTitle })
+	let sheet = await loadSheet({ documentKey, sheetTitle })
 
 	// The getRows approach assumes the first row is the header
 	// many of the community spreadsheets have information prior to the header row
@@ -344,6 +353,8 @@ async function loadSourceRows(sheetDescription) {
 		}
 		rowIndex += 1;
 	} while (rowIndex < sheet.rowCount);
+
+	sheet = null;
 
 	return rows;
 }
@@ -400,10 +411,11 @@ async function loadGoogleSpreadsheet(sheetKey) {
  * @param {string} sheetTitle Title of the worksheet to load, returns the first sheet if not specified
  */
 async function loadSheet({ documentKey, document, sheetTitle }) {
-	const doc = document || await loadGoogleSpreadsheet(documentKey);
+	let doc = document || await loadGoogleSpreadsheet(documentKey);
 
 	const sheet = sheetTitle ? doc.sheetsByIndex.find(s => s.title === sheetTitle) : doc.sheetsByIndex[0];
 
+	doc = null;
 	return sheet;
 }
 
