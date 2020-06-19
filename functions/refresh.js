@@ -32,6 +32,16 @@ const spreadsheets = [{
 		logo: 'logo',
 	},
 }, {
+	country: 'CA',
+	documentKey: '1uhPa_kUCZXcoxJKwPAkKG6XJtER1QH6ZYpJk2EkhZq4',
+	sheetTitle: 'CAN',
+	keyMap: {
+		title: 'title',
+		description: 'description',
+		donateUrl: 'donateUrl',
+		logo: 'logo',
+	},
+}, {
 	country: 'US',
 	documentKey: '1uhPa_kUCZXcoxJKwPAkKG6XJtER1QH6ZYpJk2EkhZq4',
 	sheetTitle: 'USA',
