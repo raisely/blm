@@ -189,7 +189,7 @@ async function updateMain(force) {
 
 	await pMap(
 		Object.keys(sourcesByCountry),
-		country => updateCountry(country, sourcesByCountry[country], metaDocument),
+		country => updateCountry(country, sourcesByCountry[country]),
 		// Don't run parallelt as each spreadsheet involves loading a lot of rows into memory
 		// and we haven't a lot of memory allocated to the function
 		{ concurrency: 1 }
@@ -214,8 +214,10 @@ async function updateMain(force) {
  * @param {object[]} sources Source for this country
  * @param {GoogleSpreadsheet} metaDocument The previously loaded main spreadsheet
  */
-async function updateCountry(country, sources, metaDocument) {
-	const countrySheet = await loadSheet({ document: metaDocument, sheetTitle: country });
+async function updateCountry(country, sources) {
+	// Load each country sheet separately so GC can clean up that sheet
+	// once we're done updating it
+	const countrySheet = await loadSheet({ documentKey: META_SHEET, sheetTitle: country });
 	const countryRows = await countrySheet.getRows();
 
 	// To keep promises managable
